@@ -340,7 +340,7 @@
     const insertReg = /(insert into)/;
     const freeSQL = (connector) => {
         const db = connector;
-        const insert = (sql, sqlValues) => __awaiter(void 0, void 0, void 0, function* () {
+        const free = (sql, sqlValues) => __awaiter(void 0, void 0, void 0, function* () {
             let err;
             try {
                 const out = yield db.query(sql, sqlValues);
@@ -398,7 +398,7 @@
                 }
                 // 添加剩余的列
                 yield autoAlter(db, table, colMap);
-                return insert(sql, sqlValues);
+                return free(sql, sqlValues);
             }
             if (/doesn\'t exist/.test(errStr) && /Table/.test(errStr)) {
                 // 自动创建表 和 列
@@ -424,16 +424,16 @@
                 if (_afterCreate) {
                     yield Promise.resolve(_afterCreate());
                 }
-                return insert(sql, sqlValues);
+                return free(sql, sqlValues);
             }
             throw err;
         });
         const out = {
-            insert,
+            free,
             query: (a, b) => connector.query(a, b),
             connector,
             parseInsert,
-            safeQuery: (a, b) => safeQuery(insert, a, b),
+            safeQuery: (a, b) => safeQuery(free, a, b),
             onAfterAlterTable,
             onAfterCreateTable,
             onBeforeAlterTable,

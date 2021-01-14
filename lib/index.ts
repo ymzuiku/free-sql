@@ -21,7 +21,7 @@ interface NoSchemaDb<T> {
   connector: T;
   query: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   safeQuery: (sql: string, sqlValue?: any[]) => Promise<any[]>;
-  insert: (sql: string, sqlValue?: any[]) => Promise<any[]>;
+  free: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   alter: (sql: string, sqlValue?: any[]) => void;
   alterBase: (sql: string, sqlValue?: any[]) => void;
   parseInsert: typeof parseInsert;
@@ -35,7 +35,7 @@ interface NoSchemaDb<T> {
 
 const freeSQL = <T>(connector: T): NoSchemaDb<T> => {
   const db = connector as any;
-  const insert = async (sql: string, sqlValues?: any[]): Promise<any> => {
+  const free = async (sql: string, sqlValues?: any[]): Promise<any> => {
     let err: Error;
     try {
       const out = await db.query(sql, sqlValues);
@@ -95,7 +95,7 @@ const freeSQL = <T>(connector: T): NoSchemaDb<T> => {
       }
       // 添加剩余的列
       await autoAlter(db, table, colMap);
-      return insert(sql, sqlValues);
+      return free(sql, sqlValues);
     }
     if (/doesn\'t exist/.test(errStr) && /Table/.test(errStr)) {
       // 自动创建表 和 列
@@ -126,17 +126,17 @@ const freeSQL = <T>(connector: T): NoSchemaDb<T> => {
       if (_afterCreate) {
         await Promise.resolve(_afterCreate());
       }
-      return insert(sql, sqlValues);
+      return free(sql, sqlValues);
     }
     throw err;
   };
 
   const out = {
-    insert,
+    free,
     query: (a: string, b?: any[]) => (connector as any).query(a, b),
     connector,
     parseInsert,
-    safeQuery: (a: string, b?: any[]) => safeQuery(insert, a, b),
+    safeQuery: (a: string, b?: any[]) => safeQuery(free, a, b),
     onAfterAlterTable,
     onAfterCreateTable,
     onBeforeAlterTable,

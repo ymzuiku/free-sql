@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>alter | noschema</title>
-	<meta name="description" content="Documentation for noschema">
+	<title>alter | free-sql</title>
+	<meta name="description" content="Documentation for free-sql">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">noschema</a>
+					<a href="../index.html" class="title">free-sql</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">noschema</a>
+					<a href="../modules.html">free-sql</a>
 				</li>
 				<li>
 					<a href="alter.html">alter</a>
@@ -73,7 +73,7 @@
 							<h3>Functions</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="alter.html#alter-1" class="tsd-kind-icon">alter</a></li>
-								<li class="tsd-kind-function tsd-parent-kind-module"><a href="alter.html#alterinplace" class="tsd-kind-icon">alter<wbr>Inplace</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-module"><a href="alter.html#alterbase" class="tsd-kind-icon">alter<wbr>Base</a></li>
 							</ul>
 						</section>
 					</div>
@@ -85,13 +85,13 @@
 					<a name="alter-1" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagConst">Const</span> alter</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module">
-						<li class="tsd-signature tsd-kind-icon">alter<span class="tsd-signature-symbol">(</span>connector<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, sql<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, sqlValues<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">alter<span class="tsd-signature-symbol">(</span>connector<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, sql<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, sqlValues<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/ymzuiku/noschema/blob/6d78b23/lib/alter.ts#L15">alter.ts:15</a></li>
+									<li>Defined in <a href="https://github.com/ymzuiku/free-sql/blob/4177906/lib/alter.ts#L6">alter.ts:6</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -103,7 +103,7 @@
 									<h5>sql: <span class="tsd-signature-type">string</span></h5>
 								</li>
 								<li>
-									<h5>sqlValues: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> sqlValues: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -111,16 +111,16 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-module">
-					<a name="alterinplace" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagConst">Const</span> alter<wbr>Inplace</h3>
+					<a name="alterbase" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagConst">Const</span> alter<wbr>Base</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module">
-						<li class="tsd-signature tsd-kind-icon">alter<wbr>Inplace<span class="tsd-signature-symbol">(</span>connector<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, sql<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, sqlValues<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">alter<wbr>Base<span class="tsd-signature-symbol">(</span>connector<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, sql<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, sqlValues<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/ymzuiku/noschema/blob/6d78b23/lib/alter.ts#L6">alter.ts:6</a></li>
+									<li>Defined in <a href="https://github.com/ymzuiku/free-sql/blob/4177906/lib/alter.ts#L11">alter.ts:11</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -132,7 +132,7 @@
 									<h5>sql: <span class="tsd-signature-type">string</span></h5>
 								</li>
 								<li>
-									<h5>sqlValues: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> sqlValues: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -157,6 +157,9 @@
 						<a href="createdbanduser.html">create<wbr>DbAnd<wbr>User</a>
 					</li>
 					<li class=" tsd-kind-module">
+						<a href="createtabledetail.html">create<wbr>Table<wbr>Detail</a>
+					</li>
+					<li class=" tsd-kind-module">
 						<a href="index.html">index</a>
 					</li>
 					<li class=" tsd-kind-module">
@@ -169,13 +172,13 @@
 						<a href="onbeforealtertable.html">on<wbr>Before<wbr>Alter<wbr>Table</a>
 					</li>
 					<li class=" tsd-kind-module">
-						<a href="oncreatetable.html">on<wbr>Create<wbr>Table</a>
-					</li>
-					<li class=" tsd-kind-module">
 						<a href="parse.html">parse</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="queryonce.html">query<wbr>Once</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="safequery.html">safe<wbr>Query</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="sql.html">sql</a>
@@ -188,7 +191,7 @@
 						<a href="alter.html#alter-1" class="tsd-kind-icon">alter</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-module">
-						<a href="alter.html#alterinplace" class="tsd-kind-icon">alter<wbr>Inplace</a>
+						<a href="alter.html#alterbase" class="tsd-kind-icon">alter<wbr>Base</a>
 					</li>
 				</ul>
 			</nav>

@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>NoSchemaOpt | noschema</title>
-	<meta name="description" content="Documentation for noschema">
+	<title>NoSchemaOpt | free-sql</title>
+	<meta name="description" content="Documentation for free-sql">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">noschema</a>
+					<a href="../index.html" class="title">free-sql</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">noschema</a>
+					<a href="../modules.html">free-sql</a>
 				</li>
 				<li>
 					<a href="../modules/config.html">config</a>
@@ -84,12 +84,13 @@
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="config.noschemaopt.html#focusdoubletype" class="tsd-kind-icon">focus<wbr>Double<wbr>Type</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="config.noschemaopt.html#focustimetype" class="tsd-kind-icon">focus<wbr>Time<wbr>Type</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="config.noschemaopt.html#ignoreautoindex" class="tsd-kind-icon">ignore<wbr>Auto<wbr>Index</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="config.noschemaopt.html#ignorecreateat" class="tsd-kind-icon">ignore<wbr>Create<wbr>At</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="config.noschemaopt.html#ignoreid" class="tsd-kind-icon">ignore<wbr>Id</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="config.noschemaopt.html#ignorenoschema" class="tsd-kind-icon">ignore<wbr>NoSchema</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="config.noschemaopt.html#ignoreupdateat" class="tsd-kind-icon">ignore<wbr>Update<wbr>At</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="config.noschemaopt.html#primarykey" class="tsd-kind-icon">primary<wbr>Key</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="config.noschemaopt.html#resettablelimit" class="tsd-kind-icon">reset<wbr>Table<wbr>Limit</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="config.noschemaopt.html#varcharminlength" class="tsd-kind-icon">varchar<wbr>Min<wbr>Length</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="config.noschemaopt.html#varcharrate" class="tsd-kind-icon">varchar<wbr>Rate</a></li>
 							</ul>
@@ -102,25 +103,55 @@
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="focusdoubletype" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagOptional">Optional</span> focus<wbr>Double<wbr>Type</h3>
-					<div class="tsd-signature tsd-kind-icon">focus<wbr>Double<wbr>Type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
+					<div class="tsd-signature tsd-kind-icon">focus<wbr>Double<wbr>Type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/ymzuiku/noschema/blob/6d78b23/lib/config.ts#L35">config.ts:35</a></li>
+							<li>Defined in <a href="https://github.com/ymzuiku/free-sql/blob/4177906/lib/config.ts#L29">config.ts:29</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>带小数点的 number 自动识别为 Double 的 tableNames，默认为 Float</p>
+							<p>浮点数的类型 ，默认为 Float</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="focustimetype" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> focus<wbr>Time<wbr>Type</h3>
+					<div class="tsd-signature tsd-kind-icon">focus<wbr>Time<wbr>Type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/ymzuiku/free-sql/blob/4177906/lib/config.ts#L31">config.ts:31</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>时间的类型, 默认为 DATETIME</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="ignoreautoindex" class="tsd-anchor"></a>
+					<h3>ignore<wbr>Auto<wbr>Index</h3>
+					<div class="tsd-signature tsd-kind-icon">ignore<wbr>Auto<wbr>Index<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/ymzuiku/free-sql/blob/4177906/lib/config.ts#L35">config.ts:35</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>某些表忽略自动创建索引</p>
 						</div>
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="ignorecreateat" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> ignore<wbr>Create<wbr>At</h3>
-					<div class="tsd-signature tsd-kind-icon">ignore<wbr>Create<wbr>At<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
+					<h3>ignore<wbr>Create<wbr>At</h3>
+					<div class="tsd-signature tsd-kind-icon">ignore<wbr>Create<wbr>At<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/ymzuiku/noschema/blob/6d78b23/lib/config.ts#L31">config.ts:31</a></li>
+							<li>Defined in <a href="https://github.com/ymzuiku/free-sql/blob/4177906/lib/config.ts#L25">config.ts:25</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -131,11 +162,11 @@
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="ignoreid" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> ignore<wbr>Id</h3>
-					<div class="tsd-signature tsd-kind-icon">ignore<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
+					<h3>ignore<wbr>Id</h3>
+					<div class="tsd-signature tsd-kind-icon">ignore<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/ymzuiku/noschema/blob/6d78b23/lib/config.ts#L29">config.ts:29</a></li>
+							<li>Defined in <a href="https://github.com/ymzuiku/free-sql/blob/4177906/lib/config.ts#L23">config.ts:23</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -150,7 +181,7 @@
 					<div class="tsd-signature tsd-kind-icon">ignore<wbr>NoSchema<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span>checker<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CheckerOptions</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/ymzuiku/noschema/blob/6d78b23/lib/config.ts#L21">config.ts:21</a></li>
+							<li>Defined in <a href="https://github.com/ymzuiku/free-sql/blob/4177906/lib/config.ts#L21">config.ts:21</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -161,11 +192,11 @@
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="ignoreupdateat" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> ignore<wbr>Update<wbr>At</h3>
-					<div class="tsd-signature tsd-kind-icon">ignore<wbr>Update<wbr>At<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
+					<h3>ignore<wbr>Update<wbr>At</h3>
+					<div class="tsd-signature tsd-kind-icon">ignore<wbr>Update<wbr>At<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/ymzuiku/noschema/blob/6d78b23/lib/config.ts#L33">config.ts:33</a></li>
+							<li>Defined in <a href="https://github.com/ymzuiku/free-sql/blob/4177906/lib/config.ts#L27">config.ts:27</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -180,7 +211,7 @@
 					<div class="tsd-signature tsd-kind-icon">primary<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/ymzuiku/noschema/blob/6d78b23/lib/config.ts#L25">config.ts:25</a></li>
+							<li>Defined in <a href="https://github.com/ymzuiku/free-sql/blob/4177906/lib/config.ts#L33">config.ts:33</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -190,32 +221,17 @@
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="resettablelimit" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> reset<wbr>Table<wbr>Limit</h3>
-					<div class="tsd-signature tsd-kind-icon">reset<wbr>Table<wbr>Limit<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-symbol">{}</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/ymzuiku/noschema/blob/6d78b23/lib/config.ts#L23">config.ts:23</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>当 Table 小于一定的长度，若插入的内容和表结构冲突，自动重新创建表，清空数据</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="varcharminlength" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagOptional">Optional</span> varchar<wbr>Min<wbr>Length</h3>
 					<div class="tsd-signature tsd-kind-icon">varchar<wbr>Min<wbr>Length<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/ymzuiku/noschema/blob/6d78b23/lib/config.ts#L37">config.ts:37</a></li>
+							<li>Defined in <a href="https://github.com/ymzuiku/free-sql/blob/4177906/lib/config.ts#L37">config.ts:37</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>string 类型默认创建 varchar 最小值, 默认为 255</p>
+							<p>string 类型默认创建 varchar 最小值, 默认为 128, 同时也是 varchar 自动创建索引的尺寸依据</p>
 						</div>
 					</div>
 				</section>
@@ -225,12 +241,12 @@
 					<div class="tsd-signature tsd-kind-icon">varchar<wbr>Rate<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/ymzuiku/noschema/blob/6d78b23/lib/config.ts#L39">config.ts:39</a></li>
+							<li>Defined in <a href="https://github.com/ymzuiku/free-sql/blob/4177906/lib/config.ts#L39">config.ts:39</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>根据首次插入的长度 * varcharRate 来判定 varchar 区间, 默认为 4 倍, 最后会和 varcharMinLength 之间取最大值</p>
+							<p>根据首次插入的长度 * varcharRate 来判定 varchar 区间, 默认为 4 倍, 最后会和 varcharMinLength 之间取最大值，并且计算为2的次方</p>
 						</div>
 					</div>
 				</section>
@@ -252,6 +268,9 @@
 						<a href="../modules/createdbanduser.html">create<wbr>DbAnd<wbr>User</a>
 					</li>
 					<li class=" tsd-kind-module">
+						<a href="../modules/createtabledetail.html">create<wbr>Table<wbr>Detail</a>
+					</li>
+					<li class=" tsd-kind-module">
 						<a href="../modules/index.html">index</a>
 					</li>
 					<li class=" tsd-kind-module">
@@ -264,13 +283,13 @@
 						<a href="../modules/onbeforealtertable.html">on<wbr>Before<wbr>Alter<wbr>Table</a>
 					</li>
 					<li class=" tsd-kind-module">
-						<a href="../modules/oncreatetable.html">on<wbr>Create<wbr>Table</a>
-					</li>
-					<li class=" tsd-kind-module">
 						<a href="../modules/parse.html">parse</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="../modules/queryonce.html">query<wbr>Once</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="../modules/safequery.html">safe<wbr>Query</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="../modules/sql.html">sql</a>
@@ -288,6 +307,12 @@
 								<a href="config.noschemaopt.html#focusdoubletype" class="tsd-kind-icon">focus<wbr>Double<wbr>Type</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="config.noschemaopt.html#focustimetype" class="tsd-kind-icon">focus<wbr>Time<wbr>Type</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="config.noschemaopt.html#ignoreautoindex" class="tsd-kind-icon">ignore<wbr>Auto<wbr>Index</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
 								<a href="config.noschemaopt.html#ignorecreateat" class="tsd-kind-icon">ignore<wbr>Create<wbr>At</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
@@ -301,9 +326,6 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
 								<a href="config.noschemaopt.html#primarykey" class="tsd-kind-icon">primary<wbr>Key</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="config.noschemaopt.html#resettablelimit" class="tsd-kind-icon">reset<wbr>Table<wbr>Limit</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
 								<a href="config.noschemaopt.html#varcharminlength" class="tsd-kind-icon">varchar<wbr>Min<wbr>Length</a>

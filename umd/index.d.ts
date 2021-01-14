@@ -9,7 +9,7 @@ interface NoSchemaDb<T> {
     connector: T;
     query: (sql: string, sqlValue?: any[]) => Promise<any[]>;
     safeQuery: (sql: string, sqlValue?: any[]) => Promise<any[]>;
-    insert: (sql: string, sqlValue?: any[]) => Promise<any[]>;
+    free: (sql: string, sqlValue?: any[]) => Promise<any[]>;
     alter: (sql: string, sqlValue?: any[]) => void;
     alterBase: (sql: string, sqlValue?: any[]) => void;
     parseInsert: typeof parseInsert;
