@@ -1,7 +1,7 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
-    (global = global || self, global.noschema = factory());
+    (global = global || self, global.freeSQL = factory());
 }(this, function () { 'use strict';
 
     /*! *****************************************************************************
@@ -327,103 +327,113 @@
         });
     }
 
+    const safeQuery = (db, sql, sqlValues) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const out = yield db.insert(sql, sqlValues);
+            return out;
+        }
+        catch (err) {
+            return [];
+        }
+    });
+
     const insertReg = /(insert into)/;
-    const noschema = (connector) => {
+    const freeSQL = (connector) => {
         const db = connector;
         const insert = (sql, sqlValues) => __awaiter(void 0, void 0, void 0, function* () {
+            let err;
             try {
                 const out = yield db.query(sql, sqlValues);
                 return out;
             }
-            catch (err) {
-                let low = lowSQL(sql);
-                if (!insertReg.test(low)) {
-                    throw err;
-                }
-                if (sqlValues) {
-                    sqlValues.forEach((v) => {
-                        if (Object.prototype.toString.call(v) === "[object Date]") {
-                            low = low.replace("?", '"' + v.toISOString() + '"');
-                        }
-                        if (typeof v === "string") {
-                            if (low.split("?")[0].indexOf("values")) {
-                                low = low.replace("?", '"' + v + '"');
-                            }
-                            else {
-                                low = low.replace("?", "`" + v + "`");
-                            }
-                        }
-                        else {
-                            low = low.replace("?", v);
-                        }
-                    });
-                }
-                err = err.toString();
-                const createTable = () => __awaiter(void 0, void 0, void 0, function* () {
-                    // 自动创建表 和 列
-                    let { colMap, table, values, columns } = yield getColMap(null, low);
-                    if (config.ignoreNoSchema) {
-                        if (yield Promise.resolve(config.ignoreNoSchema({
-                            type: "createTable",
-                            error: err,
-                            values,
-                            columns,
-                            sql,
-                            sqlValues,
-                            table,
-                            colMap,
-                        }))) {
-                            throw err;
-                        }
-                    }
-                    yield autoTable(db, table);
-                    const { colMap: c2 } = yield getColMap(db, low);
-                    yield autoAlter(db, table, c2);
-                    const _afterCreate = afterCreateTableCache[table];
-                    if (_afterCreate) {
-                        yield Promise.resolve(_afterCreate());
-                    }
-                    return insert(sql, sqlValues);
-                });
-                if (/Unknown column/.test(err)) {
-                    // 自动创建列
-                    let { colMap, table, values, columns } = yield getColMap(db, low);
-                    if (config.ignoreNoSchema) {
-                        if (yield Promise.resolve(config.ignoreNoSchema({
-                            type: "alteColumns",
-                            error: err,
-                            values,
-                            columns,
-                            sql,
-                            sqlValues,
-                            table,
-                            colMap,
-                        }))) {
-                            throw err;
-                        }
-                    }
-                    // 若有 befault，就先添加列
-                    const _beforeAlter = beforeAlterTableCache[table];
-                    if (_beforeAlter) {
-                        yield Promise.resolve(_beforeAlter());
-                        // 更新缺少的列
-                        colMap = (yield getColMap(db, low)).colMap;
-                    }
-                    // 添加剩余的列
-                    yield autoAlter(db, table, colMap);
-                    return insert(sql, sqlValues);
-                }
-                if (/doesn\'t exist/.test(err) && /Table/.test(err)) {
-                    return createTable();
-                }
+            catch (error) {
+                err = error;
+            }
+            let low = lowSQL(sql);
+            if (!insertReg.test(low)) {
                 throw err;
             }
+            if (sqlValues) {
+                sqlValues.forEach((v) => {
+                    if (Object.prototype.toString.call(v) === "[object Date]") {
+                        low = low.replace("?", '"' + v.toISOString() + '"');
+                    }
+                    if (typeof v === "string") {
+                        if (low.split("?")[0].indexOf("values")) {
+                            low = low.replace("?", '"' + v + '"');
+                        }
+                        else {
+                            low = low.replace("?", "`" + v + "`");
+                        }
+                    }
+                    else {
+                        low = low.replace("?", v);
+                    }
+                });
+            }
+            const errStr = err.toString();
+            if (/Unknown column/.test(errStr)) {
+                // 自动创建列
+                let { colMap, table, values, columns } = yield getColMap(db, low);
+                if (config.ignoreNoSchema) {
+                    if (yield Promise.resolve(config.ignoreNoSchema({
+                        type: "alteColumns",
+                        error: err,
+                        values,
+                        columns,
+                        sql,
+                        sqlValues,
+                        table,
+                        colMap,
+                    }))) {
+                        throw err;
+                    }
+                }
+                // 若有 befault，就先添加列
+                const _beforeAlter = beforeAlterTableCache[table];
+                if (_beforeAlter) {
+                    yield Promise.resolve(_beforeAlter());
+                    // 更新缺少的列
+                    colMap = (yield getColMap(db, low)).colMap;
+                }
+                // 添加剩余的列
+                yield autoAlter(db, table, colMap);
+                return insert(sql, sqlValues);
+            }
+            if (/doesn\'t exist/.test(errStr) && /Table/.test(errStr)) {
+                // 自动创建表 和 列
+                let { colMap, table, values, columns } = yield getColMap(null, low);
+                if (config.ignoreNoSchema) {
+                    if (yield Promise.resolve(config.ignoreNoSchema({
+                        type: "createTable",
+                        error: err,
+                        values,
+                        columns,
+                        sql,
+                        sqlValues,
+                        table,
+                        colMap,
+                    }))) {
+                        throw err;
+                    }
+                }
+                yield autoTable(db, table);
+                const { colMap: c2 } = yield getColMap(db, low);
+                yield autoAlter(db, table, c2);
+                const _afterCreate = afterCreateTableCache[table];
+                if (_afterCreate) {
+                    yield Promise.resolve(_afterCreate());
+                }
+                return insert(sql, sqlValues);
+            }
+            throw err;
         });
         const out = {
             insert,
             query: (a, b) => connector.query(a, b),
             connector,
             parseInsert,
+            safeQuery: (a, b) => safeQuery(insert, a, b),
             onAfterAlterTable,
             onAfterCreateTable,
             onBeforeAlterTable,
@@ -436,6 +446,6 @@
         return out;
     };
 
-    return noschema;
+    return freeSQL;
 
 }));

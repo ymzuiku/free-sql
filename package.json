@@ -1,6 +1,6 @@
 {
-  "name": "noschema",
-  "version": "1.2.3",
+  "name": "free-sql",
+  "version": "1.0.0",
   "main": "umd/index.js",
   "types": "umd/index.d.ts",
   "private": false,
@@ -44,10 +44,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ymzuiku/mysql-noschema.git"
+    "url": "git+https://github.com/ymzuiku/free-sql.git"
   },
   "bugs": {
-    "url": "git+https://github.com/ymzuiku/mysql-noschema.git"
+    "url": "git+https://github.com/ymzuiku/free-sql.git"
   },
   "dependencies": {}
 }

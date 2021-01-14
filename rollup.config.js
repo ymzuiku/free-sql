@@ -38,7 +38,7 @@ const watchOptions = [
     output: {
       file: "./umd/index.js",
       format: "umd",
-      name: "noschema",
+      name: "freeSQL",
       sourcemap: false,
     },
     plugins: [

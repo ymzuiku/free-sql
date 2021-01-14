@@ -1,12 +1,12 @@
-# noschema
+# free-sql
 
-如果你习惯于 MySQL 的生态，习惯于 SQL 查询，但是又向往 Mongodb 的无模式，动态创建表，不需要维护字段，使用 noschema 就可以满足你的幻想。
+如果你习惯于 MySQL 的生态，习惯于 SQL 查询，但是又向往 Mongodb 的无模式，动态创建表，不需要维护字段，使用 free-sql 就可以满足你的幻想。
 
-noschema 可以帮助你在 MySQL 插入的过程中，自动创建表、字段。
+free-sql 可以帮助你在 MySQL 插入的过程中，自动创建表、字段。
 
-noschema 特别适合多租户类型的项目
+free-sql 特别适合多租户类型的项目
 
-document: [https://noschema.writeflowy.com/](https://noschema.writeflowy.com/)
+document: [https://free-sql.writeflowy.com/](https://free-sql.writeflowy.com/)
 
 > Use mysql2/promise
 
@@ -19,14 +19,14 @@ document: [https://noschema.writeflowy.com/](https://noschema.writeflowy.com/)
 ## Install
 
 ```
-$ yarn add noschema
+$ yarn add free-sql
 ```
 
 ## Use
 
 ```ts
 import Mysql from 'mysql2/promise';
-import noschema from 'noschema'
+import freeSQL from 'free-sql'
 
 // 创建 mysql 连机器或连接池
 const pool = mysql.createPool({
@@ -37,7 +37,7 @@ const pool = mysql.createPool({
 });
 
 // 对 mysql 连接器进行处理
-const db = noschema(pool);
+const db = freeSQL(pool);
 
 async function start(){
   // 使用默认的 db.query 语句，会提示错误，user 表不存在
@@ -87,12 +87,12 @@ CREATE TABLE `table` (
 
 ```ts
 // 取消个别表
-noschema.setConfig({
+freeSQL.setConfig({
   ignoreAutoIndex:['user', 'page']
 })
 
 // 取消所有表
-noschema.setConfig({
+freeSQL.setConfig({
   ignoreAutoIndex:['*']
 })
 ```
@@ -120,9 +120,9 @@ db.alterBase('alter table add index index_age(age)');
 ## 配置
 
 ```ts
-noschema.setConfig({
-  /** 判断哪些情况忽略 NoSchema */
-  ignoreNoSchema?: (checker: CheckerOptions) => any;
+freeSQL.setConfig({
+  /** 判断哪些情况忽略 free-sql */
+  ignoreNoSchme?: (checker: CheckerOptions) => any;
   /** 忽略默认字段 id 的 tableNames */
   ignoreId: string[];
   /** 忽略默认字段 create_at 的 tableNames */
@@ -146,5 +146,5 @@ noschema.setConfig({
 
 ## 和 ORM 定义类有什么区别？
 
-1. noschema 保持原始的 SQL 脚本，更适合喜欢编写原始 SQL 的开发者
+1. free-sql 保持原始的 SQL 脚本，更适合喜欢编写原始 SQL 的开发者
 2. ORM 种类繁多，遇到复杂情况，往往最后还是会回归到编写 SQL 语句

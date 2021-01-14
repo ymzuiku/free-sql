@@ -8,6 +8,7 @@ import { CreateDbAndUserOpt } from "./createDbAndUser";
 interface NoSchemaDb<T> {
     connector: T;
     query: (sql: string, sqlValue?: any[]) => Promise<any[]>;
+    safeQuery: (sql: string, sqlValue?: any[]) => Promise<any[]>;
     insert: (sql: string, sqlValue?: any[]) => Promise<any[]>;
     alter: (sql: string, sqlValue?: any[]) => void;
     alterBase: (sql: string, sqlValue?: any[]) => void;
@@ -19,5 +20,5 @@ interface NoSchemaDb<T> {
     setConfig: typeof setConfig;
     createDbAndUser: (opt: CreateDbAndUserOpt) => Promise<void>;
 }
-declare const noschema: <T>(connector: T) => NoSchemaDb<T>;
-export default noschema;
+declare const freeSQL: <T>(connector: T) => NoSchemaDb<T>;
+export default freeSQL;
