@@ -215,14 +215,14 @@
         }
     });
 
-    const createTableDetailCache = {};
-    const useTableHook = (table, columns) => {
-        createTableDetailCache[table] = columns;
+    const useIndexCache = {};
+    const useIndex = (table, query) => {
+        useIndexCache[table] = query.filter(Boolean);
     };
 
-    const alterTableDetailCache = {};
-    const useAlterHook = (table, columns) => {
-        alterTableDetailCache[table] = columns;
+    const useTypeCache = {};
+    const useType = (tableAndColumn, type) => {
+        useTypeCache[tableAndColumn] = type;
     };
 
     const createTableColumns = (name) => {
@@ -265,70 +265,32 @@
     const autoAlter = (db, ast) => __awaiter(void 0, void 0, void 0, function* () {
         const columns = Object.keys(ast.columns);
         const table = ast.table;
-        const _alter = alterTableDetailCache[table] || [];
-        const sqls = [];
         for (const column of columns) {
-            const type = ast.columns[column].type;
-            const sql = `alter table ${table} add column ${column} ${type} `;
-            sqls.push(sql);
+            const alterKey = ast.table + "." + column;
+            const _sql = useTypeCache[alterKey];
+            if (_sql) {
+                yield db.query(`alter table ${table} add column ${column} ` + _sql);
+            }
+            else {
+                const type = ast.columns[column].type;
+                const sql = `alter table ${table} add column ${column} ${type} `;
+                yield db.query(sql);
+            }
+        }
+        const _alter = useIndexCache[table] || [];
+        for (const s of _alter) {
+            yield db.query(`alter table ${table} add ` + s);
         }
         for (const column of columns) {
             const type = ast.columns[column].type;
             if (checkTypeUseIndex(table, type)) {
-                let isIgnore = false;
-                _alter.forEach((str) => {
-                    let s = str.toLocaleLowerCase();
-                    const haveColumn = s.indexOf(column) > -1;
-                    if (haveColumn) {
-                        if (/alter(.+?)add(.+?)index (.+?)\(/.test(s)) {
-                            isIgnore = true;
-                        }
-                        else if (/alter(.+?)add(.+?)unique\(/.test(s)) {
-                            isIgnore = true;
-                        }
-                    }
-                });
-                if (!isIgnore) {
-                    sqls.push(`alter table ${table} add index ${column}(${column})`);
-                }
+                yield db.safeQuery(`alter table ${table} add index ${column}(${column})`);
             }
-        }
-        for (const s of sqls) {
-            yield db.query(s);
-        }
-        for (const s of _alter) {
-            yield db.query(s);
         }
     });
     const createTable = (ast) => {
         const table = ast.table;
-        const _create = createTableDetailCache[table] || [];
-        const columns = Object.keys(ast.columns);
-        const alters = [];
-        for (const column of columns) {
-            const type = ast.columns[column].type;
-            alters.push(`${column} ${type}`);
-            let isIgnoreIndex = false;
-            _create.forEach((str) => {
-                let s = str.toLocaleLowerCase();
-                const haveColumn = s.indexOf(column) > -1;
-                if (haveColumn) {
-                    if (/key(.+?)\(/.test(s)) {
-                        isIgnoreIndex = true;
-                    }
-                    else if (/unique\(/.test(s)) {
-                        isIgnoreIndex = true;
-                    }
-                }
-            });
-            if (!isIgnoreIndex && checkTypeUseIndex(table, type)) {
-                alters.push(`KEY ${column}(${column})`);
-            }
-        }
-        // for (const column of columns) {
-        // }
-        // 若自定义中已有该索引，取消添加index
-        const list = [...createTableColumns(table), ..._create, ...alters];
+        const list = [...createTableColumns(table)];
         const line = list.join(`, `);
         return `create table if not exists ${table} (${line}) ENGINE=InnoDB DEFAULT CHARSET=utf8;`;
     };
@@ -403,6 +365,7 @@
             let low = sqlstring.format(sql, sqlValues);
             if (notExitsTable.test(errString)) {
                 yield autoTable(db, yield parseSQL(null, low));
+                yield autoAlter(db, yield parseSQL(db, low));
             }
             else if (unknownColumn.test(errString)) {
                 yield autoAlter(db, yield parseSQL(db, low));
@@ -411,8 +374,8 @@
         });
         db.safeFree = (a, b) => safeFree(db, a, b);
         db.safeQuery = (a, b) => safeQuery(db, a, b);
-        db.useTableHook = useTableHook;
-        db.useAlterHook = useAlterHook;
+        db.useIndex = useIndex;
+        db.useType = useType;
         db.createDbAndUser = (a) => createDbAndUser(db, a);
         db.setFreeSQLConfig = setConfig;
         return db;

@@ -1,7 +1,7 @@
-import { createTableDetailCache } from "./useTableHook";
 import { config } from "./config";
 import { ParseSQL } from "./hepler";
-import { alterTableDetailCache } from "./useAlterHook";
+import { useIndexCache } from "./useIndex";
+import { useTypeCache } from "./useType";
 
 export const createTableColumns = (name: string) => {
   const id = config.primaryKey || "id";
@@ -52,74 +52,35 @@ function checkTypeUseIndex(table: string, type: string) {
 export const autoAlter = async (db: any, ast: ParseSQL) => {
   const columns = Object.keys(ast.columns);
   const table = ast.table;
-  const _alter = alterTableDetailCache[table] || [];
-  const sqls = [] as string[];
 
   for (const column of columns) {
-    const type = ast.columns[column].type;
-    const sql = `alter table ${table} add column ${column} ${type} `;
-    sqls.push(sql);
+    const alterKey = ast.table + "." + column;
+    const _sql = useTypeCache[alterKey];
+    if (_sql) {
+      await db.query(`alter table ${table} add column ${column} ` + _sql);
+    } else {
+      const type = ast.columns[column].type;
+      const sql = `alter table ${table} add column ${column} ${type} `;
+      await db.query(sql);
+    }
+  }
+
+  const _alter = useIndexCache[table] || [];
+  for (const s of _alter) {
+    await db.query(`alter table ${table} add ` + s);
   }
 
   for (const column of columns) {
     const type = ast.columns[column].type;
     if (checkTypeUseIndex(table, type)) {
-      let isIgnore = false;
-      _alter.forEach((str) => {
-        let s = str.toLocaleLowerCase();
-        const haveColumn = s.indexOf(column) > -1;
-        if (haveColumn) {
-          if (/alter(.+?)add(.+?)index (.+?)\(/.test(s)) {
-            isIgnore = true;
-          } else if (/alter(.+?)add(.+?)unique\(/.test(s)) {
-            isIgnore = true;
-          }
-        }
-      });
-
-      if (!isIgnore) {
-        sqls.push(`alter table ${table} add index ${column}(${column})`);
-      }
+      await db.safeQuery(`alter table ${table} add index ${column}(${column})`);
     }
-  }
-  for (const s of sqls) {
-    await db.query(s);
-  }
-  for (const s of _alter) {
-    await db.query(s);
   }
 };
 
 export const createTable = (ast: ParseSQL) => {
   const table = ast.table;
-  const _create = createTableDetailCache[table] || [];
-  const columns = Object.keys(ast.columns);
-  const alters = [] as string[];
-  for (const column of columns) {
-    const type = ast.columns[column].type;
-    alters.push(`${column} ${type}`);
-    let isIgnoreIndex = false;
-    _create.forEach((str) => {
-      let s = str.toLocaleLowerCase();
-      const haveColumn = s.indexOf(column) > -1;
-      if (haveColumn) {
-        if (/key(.+?)\(/.test(s)) {
-          isIgnoreIndex = true;
-        } else if (/unique\(/.test(s)) {
-          isIgnoreIndex = true;
-        }
-      }
-    });
-    if (!isIgnoreIndex && checkTypeUseIndex(table, type)) {
-      alters.push(`KEY ${column}(${column})`);
-    }
-  }
-  // for (const column of columns) {
-
-  // }
-  // 若自定义中已有该索引，取消添加index
-
-  const list = [...createTableColumns(table), ..._create, ...alters];
+  const list = [...createTableColumns(table)];
   const line = list.join(`, `);
   return `create table if not exists ${table} (${line}) ENGINE=InnoDB DEFAULT CHARSET=utf8;`;
 };
