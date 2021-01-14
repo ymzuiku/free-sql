@@ -100,18 +100,28 @@ freeSQL.setFreeSQLConfig({
 
 ## 自定义字段
 
-alter 方法可以优雅的在插入表时或自动创建字段时，自定义字段或索引
+useType 方法可以约定字段类型
 
 ```ts
+// 约定字段类型
+db.useType("user.vip", "varchar(300)");
 
-await db.createTableDetail('user', [
-  'age tinyint',
-  'vip varchar(64)',
-  'key vip(vip)',
-  'unique(name)'
-])
+await db.free('INSERT INTO user (name, age, vip) VALUES (?, ?, ?)', ["dog", 20, 50]);
+```
 
-// 自动创建表和字段，并进行insert
+## 自定义索引
+
+useIndex 约定索引，在表字段有变更时，会进行创建索引
+
+默认使用非锁表的方式创建( UNIQUE 索引除外)：ALGORITHM=INPLACE, LOCK = NONE
+
+```ts
+// 约定索引
+db.useType("user", "key age(age)");
+
+// 约定多个索引
+db.useType("user", ["key age(age)", "unique(name, vip)"]);
+
 await db.free('INSERT INTO user (name, age, vip) VALUES (?, ?, ?)', ["dog", 20, 50]);
 ```
 

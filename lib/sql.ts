@@ -65,9 +65,15 @@ export const autoAlter = async (db: any, ast: ParseSQL) => {
     }
   }
 
-  const _alter = useIndexCache[table] || [];
-  for (const s of _alter) {
-    await db.query(`alter table ${table} add ` + s);
+  const _indexs = useIndexCache[table] || [];
+  for (const s of _indexs) {
+    if (s.indexOf("unique(") > -1) {
+      await db.query(`alter table ${table} add ${s}`);
+    } else {
+      await db.query(
+        `alter table ${table} add ${s} , ALGORITHM=INPLACE, LOCK = NONE`
+      );
+    }
   }
 
   for (const column of columns) {

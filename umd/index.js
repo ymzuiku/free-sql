@@ -217,6 +217,9 @@
 
     const useIndexCache = {};
     const useIndex = (table, query) => {
+        if (typeof query === "string") {
+            query = [query];
+        }
         useIndexCache[table] = query.filter(Boolean);
     };
 
@@ -277,9 +280,14 @@
                 yield db.query(sql);
             }
         }
-        const _alter = useIndexCache[table] || [];
-        for (const s of _alter) {
-            yield db.query(`alter table ${table} add ` + s);
+        const _indexs = useIndexCache[table] || [];
+        for (const s of _indexs) {
+            if (s.indexOf("unique(") > -1) {
+                yield db.query(`alter table ${table} add ${s}`);
+            }
+            else {
+                yield db.query(`alter table ${table} add ${s} , ALGORITHM=INPLACE, LOCK = NONE`);
+            }
         }
         for (const column of columns) {
             const type = ast.columns[column].type;
