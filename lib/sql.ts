@@ -1,6 +1,6 @@
-import { afterAlterTableCache } from "./onAfterAlterTable";
-import { createTableDetailCache } from "./createTableDetail";
+import { createTableDetailCache } from "./onCreateTableDetail";
 import { config } from "./config";
+import { ParseSQL } from "./hepler";
 
 export const createTableColumns = (name: string) => {
   const id = config.primaryKey || "id";
@@ -26,12 +26,7 @@ export const createTable = (name: string) => {
   return `create table if not exists ${name} (${line}) ENGINE=InnoDB DEFAULT CHARSET=utf8;`;
 };
 
-const useIndexTypes = {
-  TIMESTAMP: 1,
-  DATETIME: 1,
-  INT: 1,
-  TINYINT: 1,
-} as any;
+const useIndexTypes = ["TIMESTAMP", "DATETIME", "INT", "TINYINT"];
 
 function checkTypeUseIndex(table: string, type: string) {
   if (
@@ -51,17 +46,20 @@ function checkTypeUseIndex(table: string, type: string) {
     }
     return false;
   }
-  return useIndexTypes[type];
+  let isIndex = false;
+  useIndexTypes.forEach((item) => {
+    if (type.indexOf(item) === 0) {
+      isIndex = true;
+    }
+  });
+  return isIndex;
 }
 
-export const autoAlter = async (
-  db: any,
-  table: string,
-  colMap: { [key: string]: string }
-) => {
-  const columns = Object.keys(colMap);
+export const autoAlter = async (db: any, ast: ParseSQL) => {
+  const columns = Object.keys(ast.columns);
+  const table = ast.table;
   for (const column of columns) {
-    const type = colMap[column];
+    const type = ast.columns[column].type;
     const sql = `alter table ${table} add column ${column} ${type} `;
     await db.query(sql);
     const index = checkTypeUseIndex(table, type)
@@ -69,12 +67,6 @@ export const autoAlter = async (
       : "";
     if (index) {
       await db.query(`alter table ${table} add index ${column}(${column})`);
-    }
-  }
-  for (const column of columns) {
-    const _alter = afterAlterTableCache[table + "." + column];
-    if (_alter) {
-      await Promise.resolve(_alter());
     }
   }
 };

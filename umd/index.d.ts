@@ -1,22 +1,14 @@
 import { setConfig } from "./config";
-import { createTableDetail } from "./createTableDetail";
-import { onAfterAlterTable } from "./onAfterAlterTable";
-import { onBeforeAlterTable } from "./onBeforeAlterTable";
-import { onAfterCreateTable } from "./onAfterCreateTable";
-import { CreateDbAndUserOpt } from "./createDbAndUser";
-interface NoSchemaDb<T> {
-    connector: T;
-    query: (sql: string, sqlValue?: any[]) => Promise<any[]>;
-    safeQuery: (sql: string, sqlValue?: any[]) => Promise<any[]>;
+import { createDbAndUser } from "./createDbAndUser";
+import { onCreateTableDetail } from "./onCreateTableDetail";
+interface NoSchemaDb {
     free: (sql: string, sqlValue?: any[]) => Promise<any[]>;
-    alter: (sql: string, sqlValue?: any[]) => void;
-    alterBase: (sql: string, sqlValue?: any[]) => void;
-    createTableDetail: typeof createTableDetail;
-    onAfterCreateTable: typeof onAfterCreateTable;
-    onBeforeAlterTable: typeof onBeforeAlterTable;
-    onAfterAlterTable: typeof onAfterAlterTable;
-    setConfig: typeof setConfig;
-    createDbAndUser: (opt: CreateDbAndUserOpt) => Promise<void>;
+    alter: (sql: string, sqlValue?: any[]) => Promise<any[]>;
+    safeFree: (sql: string, sqlValue?: any[]) => Promise<any[]>;
+    safeQuery: (sql: string, sqlValue?: any[]) => Promise<any[]>;
+    createDbAndUser: typeof createDbAndUser;
+    onCreateTableDetail: typeof onCreateTableDetail;
+    setFreeSQL: typeof setConfig;
 }
-declare const freeSQL: <T>(connector: T) => NoSchemaDb<T>;
+declare const freeSQL: <T>(connector: T) => NoSchemaDb & T;
 export default freeSQL;

@@ -33,15 +33,11 @@
         ignoreCreateAt: [],
         ignoreUpdateAt: [],
         ignoreAutoIndex: [],
-        autoDropTable: {},
     };
     const setConfig = (next) => {
         Object.assign(config, next);
     };
 
-    const isDate = (str) => {
-        return isNaN(Number(str)) && !isNaN(Date.parse(str));
-    };
     const lowSQL = (sql) => {
         let low = sql.toLocaleLowerCase();
         low = low.replace(/   /g, " ");
@@ -56,41 +52,105 @@
         }
         return "";
     };
-    const parse = {
-        insert: (str) => {
-            let table = getMatch(str, /into(.+?)\(/);
-            table = table.replace(/\`/g, "");
-            let columns = getMatch(str, new RegExp(`${table}(.+?)values`));
-            columns = columns.replace(/(\`|\(|\))/g, "");
-            columns = columns.split(",").map((v) => v.trim());
-            let values = getMatch(str, /values(.+?)\)/);
-            values = values.replace(/(\(|\))/g, "");
-            values = values.split(",").map((v) => v.trim());
-            return { table, columns, values };
-        },
-        update: (str) => {
-            // update table set name=''
-            let table = getMatch(str, /update (.+?) set/);
-            table = table.replace(/\`/g, "");
-            let columns = getMatch(str, new RegExp(`${table}(.+?)values`));
-            columns = columns.replace(/(\`|\(|\))/g, "");
-            columns = columns.split(",").map((v) => v.trim());
-            let values = getMatch(str, /values(.+?)\)/);
-            values = values.replace(/(\(|\))/g, "");
-            values = values.split(",").map((v) => v.trim());
-            return { table, columns, values };
-        },
-        select: (str) => {
-            let table = getMatch(str, /into(.+?)\(/);
-            table = table.replace(/\`/g, "");
-            let columns = getMatch(str, new RegExp(`${table}(.+?)values`));
-            columns = columns.replace(/(\`|\(|\))/g, "");
-            columns = columns.split(",").map((v) => v.trim());
-            let values = getMatch(str, /values(.+?)\)/);
-            values = values.replace(/(\(|\))/g, "");
-            values = values.split(",").map((v) => v.trim());
-            return { table, columns, values };
-        },
+    const { Parser } = require("node-sql-parser/build/mysql");
+    const parseSQLHelper = (sql) => {
+        const parse = new Parser();
+        let ast;
+        try {
+            ast = parse.astify(sql);
+        }
+        catch (err) {
+            throw err;
+        }
+        const type = ast.type;
+        let details;
+        let db;
+        let table;
+        try {
+            if (type === "update" || type === "insert") {
+                details = ast.table;
+            }
+            else if (type === "select") {
+                details = ast.from;
+            }
+            db = details[0].db;
+            table = details[0].table;
+        }
+        catch (err) {
+            throw "[free-sql] error get table and db";
+        }
+        if (!table) {
+            throw "[free-sql] error get table";
+        }
+        try {
+            const columns = {};
+            const isSelfTable = (table) => {
+                if (!table) {
+                    if (details.length === 1) {
+                        return true;
+                    }
+                    return false;
+                }
+                const item = details[0];
+                return item.table == table || item.as == table;
+            };
+            if (ast.set) {
+                ast.set.forEach((item) => {
+                    if (isSelfTable(item.table)) {
+                        columns[item.column] = {
+                            type: item.value.type,
+                            value: item.value.value,
+                        };
+                    }
+                });
+            }
+            const loadLeftAndRight = (obj) => {
+                if (!obj) {
+                    return;
+                }
+                if (!obj.left.column) {
+                    loadLeftAndRight(obj.left);
+                    loadLeftAndRight(obj.right);
+                }
+                else {
+                    if (isSelfTable(obj.left.table)) {
+                        if (obj.right.type !== "column_ref" && obj.right.value !== void 0) {
+                            columns[obj.left.column] = {
+                                operator: obj.operator,
+                                type: obj.right.type,
+                                value: obj.right.value,
+                            };
+                        }
+                    }
+                }
+            };
+            if (ast.where) {
+                loadLeftAndRight(ast.where);
+            }
+            details.forEach((item) => {
+                if (item.on) {
+                    loadLeftAndRight(item.on);
+                }
+            });
+            if (type === "insert") {
+                if (ast.columns && ast.values && ast.values[0] && ast.values[0].value) {
+                    ast.columns.forEach((k, i) => {
+                        const v = ast.values[0].value[i];
+                        if (v.value !== void 0) {
+                            columns[k] = v;
+                        }
+                    });
+                }
+            }
+            return { type, db, table, columns };
+        }
+        catch (err) {
+            throw "[free-sql] parse error: " + sql;
+        }
+    };
+
+    const isDate = (str) => {
+        return isNaN(Number(str)) && !isNaN(Date.parse(str));
     };
     function getVarcharLenth(len) {
         const resize = (next) => {
@@ -104,129 +164,49 @@
         };
         return resize(64);
     }
-    const getColMap = (type, db, str) => __awaiter(void 0, void 0, void 0, function* () {
-        const { table, columns, values } = parse[type](str);
-        const colMap = {};
-        columns.forEach((k, i) => {
-            let v = values[i];
-            let isNumber = false;
-            if (!/(\"|\')/.test(v)) {
-                isNumber = true;
+    const parseSQL = (db, str) => __awaiter(void 0, void 0, void 0, function* () {
+        const ast = parseSQLHelper(str);
+        const cols = Object.keys(ast.columns);
+        cols.forEach((k) => {
+            const item = ast.columns[k];
+            if (item.type === "bool") {
+                item.type = "TINYINT(1)";
             }
-            v = v.replace(/(\"|\')/g, "");
-            let kind = "VARCHAR(128)";
-            if (v === "true" || v === "false") {
-                kind = "TINYINT";
-            }
-            else if (isNumber) {
-                if (v.indexOf(".") > -1) {
-                    kind = config.focusDoubleType || "FLOAT";
+            else if (item.type === "string") {
+                if (item.value === "true" || item.value === "false") {
+                    item.type = "TINYINT(1)";
+                }
+                else if (isDate(item.value)) {
+                    item.type = config.focusTimeType || "DATETIME";
                 }
                 else {
-                    kind = "INT";
+                    const len = Math.max(getVarcharLenth(item.value.length * (config.varcharRate || 4)), config.varcharMinLength || 128);
+                    if (len < 65535) {
+                        item.type = `VARCHAR(${len})`;
+                    }
+                    else {
+                        item.type = `TEXT`;
+                    }
                 }
             }
-            else if (isDate(v)) {
-                kind = config.focusTimeType || "DATETIME";
-            }
-            else {
-                const len = Math.max(getVarcharLenth(v.length * (config.varcharRate || 4)), config.varcharMinLength || 128);
-                if (len < 65535) {
-                    kind = `VARCHAR(${len})`;
+            if (item.type === "number") {
+                if (String(item.value).indexOf(".") > -1) {
+                    item.type = config.focusDoubleType || "FLOAT";
                 }
                 else {
-                    kind = `TEXT`;
+                    item.type = "INT";
                 }
             }
-            colMap[k] = kind;
         });
         if (db) {
-            const keySet = new Set(columns);
-            const [list] = (yield db.query("show full columns from " + table));
+            const keySet = new Set(Object.keys(ast.columns));
+            const [list] = (yield db.query("show full columns from " + ast.table));
             list.forEach((item) => {
                 const name = item.Field;
-                if (keySet.has(name)) {
-                    delete colMap[name];
-                }
+                if (keySet.has(name)) ;
             });
         }
-        return { colMap, table, values, columns };
-    });
-
-    const afterAlterTableCache = {};
-    const onAfterAlterTable = (table, event) => {
-        afterAlterTableCache[table] = event;
-    };
-
-    const createTableDetailCache = {};
-    const createTableDetail = (table, columns) => {
-        createTableDetailCache[table] = columns;
-    };
-
-    const createTableColumns = (name) => {
-        const id = config.primaryKey || "id";
-        return [
-            config.ignoreId.indexOf(name) === -1 &&
-                `${id} int unsigned NOT NULL AUTO_INCREMENT`,
-            config.ignoreCreateAt.indexOf(name) === -1 &&
-                `create_at ${config.focusTimeType || "datetime"} DEFAULT CURRENT_TIMESTAMP`,
-            config.ignoreUpdateAt.indexOf(name) === -1 &&
-                `update_at ${config.focusTimeType || "datetime"} DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
-            config.ignoreId.indexOf(name) === -1 && `primary key(${id})`,
-        ].filter(Boolean);
-    };
-    const createTable = (name) => {
-        const _create = createTableDetailCache[name] || [];
-        const list = [...createTableColumns(name), ..._create];
-        const line = list.join(`, `);
-        return `create table if not exists ${name} (${line}) ENGINE=InnoDB DEFAULT CHARSET=utf8;`;
-    };
-    const useIndexTypes = {
-        TIMESTAMP: 1,
-        DATETIME: 1,
-        INT: 1,
-        TINYINT: 1,
-    };
-    function checkTypeUseIndex(table, type) {
-        if (config.ignoreAutoIndex.indexOf("*") === 0 ||
-            config.ignoreAutoIndex.indexOf(table) > -1) {
-            return false;
-        }
-        type = type.toLocaleUpperCase();
-        if (type.indexOf("VARCHAR") > -1) {
-            const match = type.match(/\((.+?)\)/);
-            if (match && match[1]) {
-                const len = Number(match[1].trim());
-                if (len <= (config.varcharMinLength || 128)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        return useIndexTypes[type];
-    }
-    const autoAlter = (db, table, colMap) => __awaiter(void 0, void 0, void 0, function* () {
-        const columns = Object.keys(colMap);
-        for (const column of columns) {
-            const type = colMap[column];
-            const sql = `alter table ${table} add column ${column} ${type} `;
-            yield db.query(sql);
-            const index = checkTypeUseIndex(table, type)
-                ? `index ${column}(${column})`
-                : "";
-            if (index) {
-                yield db.query(`alter table ${table} add index ${column}(${column})`);
-            }
-        }
-        for (const column of columns) {
-            const _alter = afterAlterTableCache[table + "." + column];
-            if (_alter) {
-                yield Promise.resolve(_alter());
-            }
-        }
-    });
-    const autoTable = (db, table) => __awaiter(void 0, void 0, void 0, function* () {
-        yield db.query(createTable(table));
+        return ast;
     });
 
     const cache = {};
@@ -273,15 +253,91 @@
         start();
     };
 
-    const beforeAlterTableCache = {};
-    const onBeforeAlterTable = (table, event) => {
-        beforeAlterTableCache[table] = event;
+    const safeFree = (db, sql, sqlValues) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const out = yield db.free(sql, sqlValues);
+            return out;
+        }
+        catch (err) {
+            return [];
+        }
+    });
+    const safeQuery = (db, sql, sqlValues) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const out = yield db.query(sql, sqlValues);
+            return out;
+        }
+        catch (err) {
+            return [];
+        }
+    });
+
+    const createTableDetailCache = {};
+    const onCreateTableDetail = (table, columns) => {
+        createTableDetailCache[table] = columns;
     };
 
-    const afterCreateTableCache = {};
-    const onAfterCreateTable = (table, event) => {
-        afterCreateTableCache[table] = event;
+    const createTableColumns = (name) => {
+        const id = config.primaryKey || "id";
+        return [
+            config.ignoreId.indexOf(name) === -1 &&
+                `${id} int unsigned NOT NULL AUTO_INCREMENT`,
+            config.ignoreCreateAt.indexOf(name) === -1 &&
+                `create_at ${config.focusTimeType || "datetime"} DEFAULT CURRENT_TIMESTAMP`,
+            config.ignoreUpdateAt.indexOf(name) === -1 &&
+                `update_at ${config.focusTimeType || "datetime"} DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
+            config.ignoreId.indexOf(name) === -1 && `primary key(${id})`,
+        ].filter(Boolean);
     };
+    const createTable = (name) => {
+        const _create = createTableDetailCache[name] || [];
+        const list = [...createTableColumns(name), ..._create];
+        const line = list.join(`, `);
+        return `create table if not exists ${name} (${line}) ENGINE=InnoDB DEFAULT CHARSET=utf8;`;
+    };
+    const useIndexTypes = ["TIMESTAMP", "DATETIME", "INT", "TINYINT"];
+    function checkTypeUseIndex(table, type) {
+        if (config.ignoreAutoIndex.indexOf("*") === 0 ||
+            config.ignoreAutoIndex.indexOf(table) > -1) {
+            return false;
+        }
+        type = type.toLocaleUpperCase();
+        if (type.indexOf("VARCHAR") > -1) {
+            const match = type.match(/\((.+?)\)/);
+            if (match && match[1]) {
+                const len = Number(match[1].trim());
+                if (len <= (config.varcharMinLength || 128)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        let isIndex = false;
+        useIndexTypes.forEach((item) => {
+            if (type.indexOf(item) === 0) {
+                isIndex = true;
+            }
+        });
+        return isIndex;
+    }
+    const autoAlter = (db, ast) => __awaiter(void 0, void 0, void 0, function* () {
+        const columns = Object.keys(ast.columns);
+        const table = ast.table;
+        for (const column of columns) {
+            const type = ast.columns[column].type;
+            const sql = `alter table ${table} add column ${column} ${type} `;
+            yield db.query(sql);
+            const index = checkTypeUseIndex(table, type)
+                ? `index ${column}(${column})`
+                : "";
+            if (index) {
+                yield db.query(`alter table ${table} add index ${column}(${column})`);
+            }
+        }
+    });
+    const autoTable = (db, table) => __awaiter(void 0, void 0, void 0, function* () {
+        yield db.query(createTable(table));
+    });
 
     function deleteUser(connector, user, host) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -332,22 +388,12 @@
         });
     }
 
-    const safeQuery = (db, sql, sqlValues) => __awaiter(void 0, void 0, void 0, function* () {
-        try {
-            const out = yield db.insert(sql, sqlValues);
-            return out;
-        }
-        catch (err) {
-            return [];
-        }
-    });
-
-    const insertReg = /(insert into (.+?)values)/;
-    const updateReg = /(update (.+?) set)/;
-    const selectReg = /select (.+?) from/;
+    const sqlstring = require("sqlstring");
+    const unknownColumn = /Unknown column/;
+    const notExitsTable = /Table (.+?)doesn\'t exist/;
     const freeSQL = (connector) => {
         const db = connector;
-        const free = (sql, sqlValues) => __awaiter(void 0, void 0, void 0, function* () {
+        db.free = (sql, sqlValues) => __awaiter(void 0, void 0, void 0, function* () {
             let err;
             try {
                 const out = yield db.query(sql, sqlValues);
@@ -356,110 +402,24 @@
             catch (error) {
                 err = error;
             }
-            let low = lowSQL(sql);
-            let sqlType;
-            if (insertReg.test(low)) {
-                sqlType = "insert";
+            const errString = err.toString();
+            let low = sqlstring.format(sql, sqlValues);
+            if (notExitsTable.test(errString)) {
+                yield autoTable(db, (yield parseSQL(null, low)).table);
+                yield autoAlter(db, yield parseSQL(db, low));
             }
-            else if (selectReg.test(low)) {
-                sqlType = "select";
+            else if (unknownColumn.test(errString)) {
+                yield autoAlter(db, yield parseSQL(db, low));
             }
-            else if (updateReg.test(low)) {
-                sqlType = "update";
-            }
-            else {
-                throw err;
-            }
-            if (sqlValues) {
-                sqlValues.forEach((v) => {
-                    if (Object.prototype.toString.call(v) === "[object Date]") {
-                        low = low.replace("?", '"' + v.toISOString() + '"');
-                    }
-                    if (typeof v === "string") {
-                        if (low.split("?")[0].indexOf("values")) {
-                            low = low.replace("?", '"' + v + '"');
-                        }
-                        else {
-                            low = low.replace("?", "`" + v + "`");
-                        }
-                    }
-                    else {
-                        low = low.replace("?", v);
-                    }
-                });
-            }
-            const errStr = err.toString();
-            if (/Unknown column/.test(errStr)) {
-                // 自动创建列
-                let { colMap, table, values, columns } = yield getColMap(sqlType, db, low);
-                if (config.ignoreNoSchema) {
-                    if (yield Promise.resolve(config.ignoreNoSchema({
-                        type: "alteColumns",
-                        error: err,
-                        values,
-                        columns,
-                        sql,
-                        sqlValues,
-                        table,
-                        colMap,
-                    }))) {
-                        throw err;
-                    }
-                }
-                // 若有 befault，就先添加列
-                const _beforeAlter = beforeAlterTableCache[table];
-                if (_beforeAlter) {
-                    yield Promise.resolve(_beforeAlter());
-                    // 更新缺少的列
-                    colMap = (yield getColMap(sqlType, db, low)).colMap;
-                }
-                // 添加剩余的列
-                yield autoAlter(db, table, colMap);
-                return free(sql, sqlValues);
-            }
-            if (/doesn\'t exist/.test(errStr) && /Table/.test(errStr)) {
-                // 自动创建表 和 列
-                let { colMap, table, values, columns } = yield getColMap(sqlType, null, low);
-                if (config.ignoreNoSchema) {
-                    if (yield Promise.resolve(config.ignoreNoSchema({
-                        type: "createTable",
-                        error: err,
-                        values,
-                        columns,
-                        sql,
-                        sqlValues,
-                        table,
-                        colMap,
-                    }))) {
-                        throw err;
-                    }
-                }
-                yield autoTable(db, table);
-                const { colMap: c2 } = yield getColMap(sqlType, db, low);
-                yield autoAlter(db, table, c2);
-                const _afterCreate = afterCreateTableCache[table];
-                if (_afterCreate) {
-                    yield Promise.resolve(_afterCreate());
-                }
-                return free(sql, sqlValues);
-            }
-            throw err;
+            return yield db.query(sql, sqlValues);
         });
-        const out = {
-            free,
-            query: (a, b) => connector.query(a, b),
-            connector,
-            safeQuery: (a, b) => safeQuery(free, a, b),
-            onAfterAlterTable,
-            onAfterCreateTable,
-            onBeforeAlterTable,
-            createTableDetail,
-            setConfig,
-            createDbAndUser: (opt) => createDbAndUser(out, opt),
-            alter: (a, b) => alter(out, a, b),
-            alterBase: (a, b) => alterBase(out, a, b),
-        };
-        return out;
+        db.alter = (a, b) => alter(db, a, b);
+        db.safeFree = (a, b) => safeFree(db, a, b);
+        db.safeQuery = (a, b) => safeQuery(db, a, b);
+        db.onCreateTableDetail = onCreateTableDetail;
+        db.createDbAndUser = (a) => createDbAndUser(db, a);
+        db.setFreeSQL = setConfig;
+        return db;
     };
 
     return freeSQL;

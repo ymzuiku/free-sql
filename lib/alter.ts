@@ -1,4 +1,4 @@
-import { getMatch, lowSQL } from "./parse";
+import { lowSQL, getMatch } from "./hepler";
 
 const cache = {} as any;
 const alterReg = /alter(.+?)table(.+?)add/;
