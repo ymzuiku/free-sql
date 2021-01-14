@@ -39,6 +39,9 @@
         Object.assign(config, next);
     };
 
+    const isDate = (str) => {
+        return isNaN(Number(str)) && !isNaN(Date.parse(str));
+    };
     const lowSQL = (sql) => {
         let low = sql.toLocaleLowerCase();
         low = low.replace(/   /g, " ");
@@ -53,36 +56,41 @@
         }
         return "";
     };
-    const getTable = (str) => {
-        const out = getMatch(str, /into(.+?)\(/);
-        return out.replace(/\`/g, "");
-    };
-    const getColumns = (str, table) => {
-        let out = getMatch(str, new RegExp(`${table}(.+?)values`));
-        out = out.replace(/(\`|\(|\))/g, "");
-        return out.split(",").map((v) => v.trim());
-    };
-    const getValues = (str) => {
-        let out = getMatch(str, /values(.+?)\)/);
-        out = out.replace(/(\(|\))/g, "");
-        // 无引号，是数字，尝试转化为 number
-        // if (!/(\"|\')/.test(out)) {
-        //   // 若有小数点，不进行转化
-        //   if (out.indexOf(".") !== -1) {
-        //     const n = Number(out);
-        //     out = isNaN(n) ? out : n;
-        //   }
-        // } else {
-        //   // 若有引号，是字符串
-        //   out = out.replace(/(\"|\')/g, "");
-        // }
-        return out.split(",").map((v) => v.trim());
-    };
-    const parseInsert = (str) => {
-        const table = getTable(str);
-        const columns = getColumns(str, table);
-        const values = getValues(str);
-        return { table, columns, values };
+    const parse = {
+        insert: (str) => {
+            let table = getMatch(str, /into(.+?)\(/);
+            table = table.replace(/\`/g, "");
+            let columns = getMatch(str, new RegExp(`${table}(.+?)values`));
+            columns = columns.replace(/(\`|\(|\))/g, "");
+            columns = columns.split(",").map((v) => v.trim());
+            let values = getMatch(str, /values(.+?)\)/);
+            values = values.replace(/(\(|\))/g, "");
+            values = values.split(",").map((v) => v.trim());
+            return { table, columns, values };
+        },
+        update: (str) => {
+            // update table set name=''
+            let table = getMatch(str, /update (.+?) set/);
+            table = table.replace(/\`/g, "");
+            let columns = getMatch(str, new RegExp(`${table}(.+?)values`));
+            columns = columns.replace(/(\`|\(|\))/g, "");
+            columns = columns.split(",").map((v) => v.trim());
+            let values = getMatch(str, /values(.+?)\)/);
+            values = values.replace(/(\(|\))/g, "");
+            values = values.split(",").map((v) => v.trim());
+            return { table, columns, values };
+        },
+        select: (str) => {
+            let table = getMatch(str, /into(.+?)\(/);
+            table = table.replace(/\`/g, "");
+            let columns = getMatch(str, new RegExp(`${table}(.+?)values`));
+            columns = columns.replace(/(\`|\(|\))/g, "");
+            columns = columns.split(",").map((v) => v.trim());
+            let values = getMatch(str, /values(.+?)\)/);
+            values = values.replace(/(\(|\))/g, "");
+            values = values.split(",").map((v) => v.trim());
+            return { table, columns, values };
+        },
     };
     function getVarcharLenth(len) {
         const resize = (next) => {
@@ -96,8 +104,8 @@
         };
         return resize(64);
     }
-    const getColMap = (db, str) => __awaiter(void 0, void 0, void 0, function* () {
-        const { table, columns, values } = parseInsert(str);
+    const getColMap = (type, db, str) => __awaiter(void 0, void 0, void 0, function* () {
+        const { table, columns, values } = parse[type](str);
         const colMap = {};
         columns.forEach((k, i) => {
             let v = values[i];
@@ -144,9 +152,6 @@
         }
         return { colMap, table, values, columns };
     });
-    const isDate = (str) => {
-        return isNaN(Number(str)) && !isNaN(Date.parse(str));
-    };
 
     const afterAlterTableCache = {};
     const onAfterAlterTable = (table, event) => {
@@ -337,7 +342,9 @@
         }
     });
 
-    const insertReg = /(insert into)/;
+    const insertReg = /(insert into (.+?)values)/;
+    const updateReg = /(update (.+?) set)/;
+    const selectReg = /select (.+?) from/;
     const freeSQL = (connector) => {
         const db = connector;
         const free = (sql, sqlValues) => __awaiter(void 0, void 0, void 0, function* () {
@@ -350,7 +357,17 @@
                 err = error;
             }
             let low = lowSQL(sql);
-            if (!insertReg.test(low)) {
+            let sqlType;
+            if (insertReg.test(low)) {
+                sqlType = "insert";
+            }
+            else if (selectReg.test(low)) {
+                sqlType = "select";
+            }
+            else if (updateReg.test(low)) {
+                sqlType = "update";
+            }
+            else {
                 throw err;
             }
             if (sqlValues) {
@@ -374,7 +391,7 @@
             const errStr = err.toString();
             if (/Unknown column/.test(errStr)) {
                 // 自动创建列
-                let { colMap, table, values, columns } = yield getColMap(db, low);
+                let { colMap, table, values, columns } = yield getColMap(sqlType, db, low);
                 if (config.ignoreNoSchema) {
                     if (yield Promise.resolve(config.ignoreNoSchema({
                         type: "alteColumns",
@@ -394,7 +411,7 @@
                 if (_beforeAlter) {
                     yield Promise.resolve(_beforeAlter());
                     // 更新缺少的列
-                    colMap = (yield getColMap(db, low)).colMap;
+                    colMap = (yield getColMap(sqlType, db, low)).colMap;
                 }
                 // 添加剩余的列
                 yield autoAlter(db, table, colMap);
@@ -402,7 +419,7 @@
             }
             if (/doesn\'t exist/.test(errStr) && /Table/.test(errStr)) {
                 // 自动创建表 和 列
-                let { colMap, table, values, columns } = yield getColMap(null, low);
+                let { colMap, table, values, columns } = yield getColMap(sqlType, null, low);
                 if (config.ignoreNoSchema) {
                     if (yield Promise.resolve(config.ignoreNoSchema({
                         type: "createTable",
@@ -418,7 +435,7 @@
                     }
                 }
                 yield autoTable(db, table);
-                const { colMap: c2 } = yield getColMap(db, low);
+                const { colMap: c2 } = yield getColMap(sqlType, db, low);
                 yield autoAlter(db, table, c2);
                 const _afterCreate = afterCreateTableCache[table];
                 if (_afterCreate) {
@@ -432,7 +449,6 @@
             free,
             query: (a, b) => connector.query(a, b),
             connector,
-            parseInsert,
             safeQuery: (a, b) => safeQuery(free, a, b),
             onAfterAlterTable,
             onAfterCreateTable,

@@ -1,5 +1,4 @@
 import { setConfig } from "./config";
-import { parseInsert } from "./parse";
 import { createTableDetail } from "./createTableDetail";
 import { onAfterAlterTable } from "./onAfterAlterTable";
 import { onBeforeAlterTable } from "./onBeforeAlterTable";
@@ -12,7 +11,6 @@ interface NoSchemaDb<T> {
     free: (sql: string, sqlValue?: any[]) => Promise<any[]>;
     alter: (sql: string, sqlValue?: any[]) => void;
     alterBase: (sql: string, sqlValue?: any[]) => void;
-    parseInsert: typeof parseInsert;
     createTableDetail: typeof createTableDetail;
     onAfterCreateTable: typeof onAfterCreateTable;
     onBeforeAlterTable: typeof onBeforeAlterTable;

@@ -1,6 +1,6 @@
 {
   "name": "free-sql",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "umd/index.js",
   "types": "umd/index.d.ts",
   "private": false,
@@ -49,5 +49,7 @@
   "bugs": {
     "url": "git+https://github.com/ymzuiku/free-sql.git"
   },
-  "dependencies": {}
+  "dependencies": {
+    "node-sql-parser": "^3.1.0"
+  }
 }

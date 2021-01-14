@@ -1,5 +1,9 @@
 import { config } from "./config";
 
+const isDate = (str: string) => {
+  return isNaN(Number(str)) && !isNaN(Date.parse(str));
+};
+
 export const lowSQL = (sql: string) => {
   let low = sql.toLocaleLowerCase();
   low = low.replace(/   /g, " ");
@@ -16,40 +20,50 @@ export const getMatch = (str: string, reg: RegExp) => {
   return "";
 };
 
-const getTable = (str: string) => {
-  const out = getMatch(str, /into(.+?)\(/);
-  return out.replace(/\`/g, "");
-};
+const parse = {
+  insert: (str: string) => {
+    let table = getMatch(str, /into(.+?)\(/);
+    table = table.replace(/\`/g, "");
 
-const getColumns = (str: string, table: string) => {
-  let out = getMatch(str, new RegExp(`${table}(.+?)values`));
-  out = out.replace(/(\`|\(|\))/g, "");
-  return out.split(",").map((v) => v.trim());
-};
+    let columns: any = getMatch(str, new RegExp(`${table}(.+?)values`));
+    columns = columns.replace(/(\`|\(|\))/g, "");
+    columns = columns.split(",").map((v: any) => v.trim());
 
-const getValues = (str: string) => {
-  let out: any = getMatch(str, /values(.+?)\)/);
-  out = out.replace(/(\(|\))/g, "");
+    let values: any = getMatch(str, /values(.+?)\)/);
+    values = values.replace(/(\(|\))/g, "");
+    values = values.split(",").map((v: any) => v.trim());
 
-  // 无引号，是数字，尝试转化为 number
-  // if (!/(\"|\')/.test(out)) {
-  //   // 若有小数点，不进行转化
-  //   if (out.indexOf(".") !== -1) {
-  //     const n = Number(out);
-  //     out = isNaN(n) ? out : n;
-  //   }
-  // } else {
-  //   // 若有引号，是字符串
-  //   out = out.replace(/(\"|\')/g, "");
-  // }
-  return out.split(",").map((v: any) => v.trim());
-};
+    return { table, columns, values };
+  },
+  update: (str: string) => {
+    // update table set name=''
+    let table = getMatch(str, /update (.+?) set/);
+    table = table.replace(/\`/g, "");
 
-export const parseInsert = (str: string) => {
-  const table = getTable(str);
-  const columns = getColumns(str, table);
-  const values = getValues(str);
-  return { table, columns, values };
+    let columns: any = getMatch(str, new RegExp(`${table}(.+?)values`));
+    columns = columns.replace(/(\`|\(|\))/g, "");
+    columns = columns.split(",").map((v: any) => v.trim());
+
+    let values: any = getMatch(str, /values(.+?)\)/);
+    values = values.replace(/(\(|\))/g, "");
+    values = values.split(",").map((v: any) => v.trim());
+
+    return { table, columns, values };
+  },
+  select: (str: string) => {
+    let table = getMatch(str, /into(.+?)\(/);
+    table = table.replace(/\`/g, "");
+
+    let columns: any = getMatch(str, new RegExp(`${table}(.+?)values`));
+    columns = columns.replace(/(\`|\(|\))/g, "");
+    columns = columns.split(",").map((v: any) => v.trim());
+
+    let values: any = getMatch(str, /values(.+?)\)/);
+    values = values.replace(/(\(|\))/g, "");
+    values = values.split(",").map((v: any) => v.trim());
+
+    return { table, columns, values };
+  },
 };
 
 function getVarcharLenth(len: number): number {
@@ -65,10 +79,14 @@ function getVarcharLenth(len: number): number {
   return resize(64) as number;
 }
 
-export const getColMap = async (db: any, str: string) => {
-  const { table, columns, values } = parseInsert(str);
+export const getColMap = async (
+  type: "insert" | "update" | "select",
+  db: any,
+  str: string
+) => {
+  const { table, columns, values } = parse[type](str);
   const colMap = {} as { [key: string]: string };
-  columns.forEach((k, i) => {
+  columns.forEach((k: string, i: number) => {
     let v = values[i];
     let isNumber = false;
     if (!/(\"|\')/.test(v)) {
@@ -112,8 +130,4 @@ export const getColMap = async (db: any, str: string) => {
   }
 
   return { colMap, table, values, columns };
-};
-
-const isDate = (str: string) => {
-  return isNaN(Number(str)) && !isNaN(Date.parse(str));
 };

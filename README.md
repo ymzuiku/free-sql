@@ -10,7 +10,7 @@ document: [https://free-sql.writeflowy.com/](https://free-sql.writeflowy.com/)
 
 > Use mysql2/promise
 
-- 给 SQL 添加 NoSQL 的风格，根据 insert 语句 自动创建表和字段
+- 给 SQL 添加 NoSQL 的风格，自动创建表和字段
 - 内置一系列钩子，可以根据条件自定义类型和忽略某些情况的 NoSQL
 - 优雅添加索引
 - 自动类型推导
@@ -42,8 +42,8 @@ const db = freeSQL(pool);
 async function start(){
   // 使用默认的 db.query 语句，会提示错误，user 表不存在
   await db.query('INSERT INTO user (name, age) VALUES ("dog", 20)');
-  // 使用扩展的 db.insert 语句，会自动创建表或字段，并进行 insert
-  await db.insert('INSERT INTO user (name, age) VALUES ("dog", 20)');
+  // 使用扩展的 db.free 语句，会自动创建表或字段，并进行
+  await db.free('INSERT INTO user (name, age) VALUES ("dog", 20)');
 }
 
 start();
@@ -104,7 +104,7 @@ alter 方法可以优雅的自定义索引，我们添加了一些条件，在�
 
 ```ts
 // 自动创建表和字段，并进行insert
-await db.insert('INSERT INTO user (name, age) VALUES (?, ?)', ["dog", 20]);
+await db.free('INSERT INTO user (name, age) VALUES (?, ?)', ["dog", 20]);
 
 // 该方法若执行时，会在内存中添加锁，程序的生命周期中仅执行一次
 // 若该方法执行结果失败，会清除内存中的锁

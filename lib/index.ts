@@ -1,5 +1,5 @@
 import { config, setConfig } from "./config";
-import { parseInsert, getColMap, lowSQL } from "./parse";
+import { getColMap, lowSQL } from "./parse";
 import { autoAlter, autoTable } from "./sql";
 import { createTableDetail } from "./createTableDetail";
 import { onAfterAlterTable } from "./onAfterAlterTable";
@@ -15,7 +15,9 @@ import {
 import { createDbAndUser, CreateDbAndUserOpt } from "./createDbAndUser";
 import { safeQuery } from "./safeQuery";
 
-const insertReg = /(insert into)/;
+const insertReg = /(insert into (.+?)values)/;
+const updateReg = /(update (.+?) set)/;
+const selectReg = /select (.+?) from/;
 
 interface NoSchemaDb<T> {
   connector: T;
@@ -24,7 +26,6 @@ interface NoSchemaDb<T> {
   free: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   alter: (sql: string, sqlValue?: any[]) => void;
   alterBase: (sql: string, sqlValue?: any[]) => void;
-  parseInsert: typeof parseInsert;
   createTableDetail: typeof createTableDetail;
   onAfterCreateTable: typeof onAfterCreateTable;
   onBeforeAlterTable: typeof onBeforeAlterTable;
@@ -43,10 +44,19 @@ const freeSQL = <T>(connector: T): NoSchemaDb<T> => {
     } catch (error) {
       err = error;
     }
+
     let low = lowSQL(sql);
-    if (!insertReg.test(low)) {
+    let sqlType: any;
+    if (insertReg.test(low)) {
+      sqlType = "insert";
+    } else if (selectReg.test(low)) {
+      sqlType = "select";
+    } else if (updateReg.test(low)) {
+      sqlType = "update";
+    } else {
       throw err;
     }
+
     if (sqlValues) {
       sqlValues.forEach((v: any) => {
         if (Object.prototype.toString.call(v) === "[object Date]") {
@@ -67,7 +77,11 @@ const freeSQL = <T>(connector: T): NoSchemaDb<T> => {
 
     if (/Unknown column/.test(errStr)) {
       // 自动创建列
-      let { colMap, table, values, columns } = await getColMap(db, low);
+      let { colMap, table, values, columns } = await getColMap(
+        sqlType,
+        db,
+        low
+      );
       if (config.ignoreNoSchema) {
         if (
           await Promise.resolve(
@@ -91,7 +105,7 @@ const freeSQL = <T>(connector: T): NoSchemaDb<T> => {
       if (_beforeAlter) {
         await Promise.resolve(_beforeAlter());
         // 更新缺少的列
-        colMap = (await getColMap(db, low)).colMap;
+        colMap = (await getColMap(sqlType, db, low)).colMap;
       }
       // 添加剩余的列
       await autoAlter(db, table, colMap);
@@ -99,7 +113,11 @@ const freeSQL = <T>(connector: T): NoSchemaDb<T> => {
     }
     if (/doesn\'t exist/.test(errStr) && /Table/.test(errStr)) {
       // 自动创建表 和 列
-      let { colMap, table, values, columns } = await getColMap(null, low);
+      let { colMap, table, values, columns } = await getColMap(
+        sqlType,
+        null,
+        low
+      );
       if (config.ignoreNoSchema) {
         if (
           await Promise.resolve(
@@ -120,7 +138,7 @@ const freeSQL = <T>(connector: T): NoSchemaDb<T> => {
       }
 
       await autoTable(db, table);
-      const { colMap: c2 } = await getColMap(db, low);
+      const { colMap: c2 } = await getColMap(sqlType, db, low);
       await autoAlter(db, table, c2);
       const _afterCreate = afterCreateTableCache[table];
       if (_afterCreate) {
@@ -128,6 +146,7 @@ const freeSQL = <T>(connector: T): NoSchemaDb<T> => {
       }
       return free(sql, sqlValues);
     }
+
     throw err;
   };
 
@@ -135,7 +154,6 @@ const freeSQL = <T>(connector: T): NoSchemaDb<T> => {
     free,
     query: (a: string, b?: any[]) => (connector as any).query(a, b),
     connector,
-    parseInsert,
     safeQuery: (a: string, b?: any[]) => safeQuery(free, a, b),
     onAfterAlterTable,
     onAfterCreateTable,
