@@ -1,20 +1,20 @@
 import { parseSQL } from "./parseSQL";
-import { alter } from "./alter";
 import { safeFree, safeQuery } from "./safeQuery";
 import { autoAlter, autoTable } from "./sql";
 import { setConfig } from "./config";
 import { createDbAndUser, CreateDbAndUserOpt } from "./createDbAndUser";
-import { onCreateTableDetail } from "./onCreateTableDetail";
+import { useTableHook } from "./useTableHook";
+import { useAlterHook } from "./useAlterHook";
 const sqlstring = require("sqlstring");
 
 interface NoSchemaDb {
   free: (sql: string, sqlValue?: any[]) => Promise<any[]>;
-  alter: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   safeFree: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   safeQuery: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   createDbAndUser: (opt: CreateDbAndUserOpt) => Promise<void>;
-  onCreateTableDetail: typeof onCreateTableDetail;
-  setFreeSQL: typeof setConfig;
+  useTableHook: typeof useTableHook;
+  useAlterHook: typeof useAlterHook;
+  setFreeSQLConfig: typeof setConfig;
 }
 
 const unknownColumn = /Unknown column/;
@@ -34,20 +34,19 @@ const freeSQL = <T>(connector: T): NoSchemaDb & T => {
     let low = sqlstring.format(sql, sqlValues);
 
     if (notExitsTable.test(errString)) {
-      await autoTable(db, (await parseSQL(null, low)).table);
-      await autoAlter(db, await parseSQL(db, low));
+      await autoTable(db, await parseSQL(null, low));
     } else if (unknownColumn.test(errString)) {
       await autoAlter(db, await parseSQL(db, low));
     }
     return await db.query(sql, sqlValues);
   };
 
-  db.alter = (a: string, b: any[]) => alter(db, a, b);
   db.safeFree = (a: string, b: any[]) => safeFree(db, a, b);
   db.safeQuery = (a: string, b: any[]) => safeQuery(db, a, b);
-  db.onCreateTableDetail = onCreateTableDetail;
+  db.useTableHook = useTableHook;
+  db.useAlterHook = useAlterHook;
   db.createDbAndUser = (a: any) => createDbAndUser(db, a);
-  db.setFreeSQL = setConfig;
+  db.setFreeSQLConfig = setConfig;
   return db;
 };
 

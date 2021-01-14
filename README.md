@@ -87,56 +87,52 @@ CREATE TABLE `table` (
 
 ```ts
 // 取消个别表
-freeSQL.setConfig({
+freeSQL.setFreeSQLConfig({
   ignoreAutoIndex:['user', 'page']
 })
 
 // 取消所有表
-freeSQL.setConfig({
+freeSQL.setFreeSQLConfig({
   ignoreAutoIndex:['*']
 })
 ```
 
 
-## 自定义索引
+## 自定义字段
 
-alter 方法可以优雅的自定义索引，我们添加了一些条件，在表体长度不大时，可以编写在代码上下文，而不需要去连接数据库操作。
+alter 方法可以优雅的在插入表时或自动创建字段时，自定义字段或索引
 
 ```ts
+
+await db.createTableDetail('user', [
+  'age tinyint',
+  'vip varchar(64)',
+  'key vip(vip)',
+  'unique(name)'
+])
+
 // 自动创建表和字段，并进行insert
-await db.free('INSERT INTO user (name, age) VALUES (?, ?)', ["dog", 20]);
-
-// 该方法若执行时，会在内存中添加锁，程序的生命周期中仅执行一次
-// 若该方法执行结果失败，会清除内存中的锁
-// 执行前会查询添加索引的表，判定若无同名索引，则开始添加索引
-// 仅允许执行 alter table add index/unique
-// 不锁表加索引，相当于：ALGORITHM=INPLACE, LOCK = NONE
-db.alter('alter table add index index_age(age)');
-
-// 忽略：ALGORITHM=INPLACE, LOCK = NONE
-db.alterBase('alter table add index index_age(age)');
+await db.free('INSERT INTO user (name, age, vip) VALUES (?, ?, ?)', ["dog", 20, 50]);
 ```
 
 ## 配置
 
 ```ts
-freeSQL.setConfig({
-  /** 判断哪些情况忽略 free-sql */
-  ignoreNoSchme?: (checker: CheckerOptions) => any;
+freeSQL.setFreeSQLConfig({
   /** 忽略默认字段 id 的 tableNames */
   ignoreId: string[];
   /** 忽略默认字段 create_at 的 tableNames */
   ignoreCreateAt: string[];
   /** 忽略默认字段 update_at 的 tableNames */
   ignoreUpdateAt: string[];
+  /** 某些表忽略自动创建索引 */
+  ignoreAutoIndex: string[];
   /** 浮点数的类型 ，默认为 Float  */
   focusDoubleType?: string;
   /** 时间的类型, 默认为 DATETIME */
   focusTimeType?: string;
   /** 主键名称，默认为 id */
   primaryKey?: string;
-  /** 某些表忽略自动创建索引 */
-  ignoreAutoIndex: string[];
   /** string 类型默认创建 varchar 最小值, 默认为 128, 同时也是 varchar 自动创建索引的尺寸依据 */
   varcharMinLength?: number;
   /** 根据首次插入的长度 * varcharRate 来判定 varchar 区间, 默认为 4 倍, 最后会和 varcharMinLength 之间取最大值，并且计算为2的次方*/

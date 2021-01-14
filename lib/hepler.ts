@@ -31,6 +31,8 @@ export interface ParseSQL {
   };
 }
 
+// export const parseAlterHelper = (sql: string) => {};
+
 export const parseSQLHelper = (sql: string): ParseSQL => {
   const parse = new Parser();
   let ast: any;
