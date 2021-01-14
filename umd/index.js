@@ -36,10 +36,6 @@
         autoDropTable: {},
     };
     const setConfig = (next) => {
-        if (next.autoDropTable) {
-            Object.assign(config.autoDropTable, next.autoDropTable);
-            delete next.autoDropTable;
-        }
         Object.assign(config, next);
     };
 
@@ -404,17 +400,6 @@
                             colMap,
                         }))) {
                             throw err;
-                        }
-                    }
-                    if (config.useAutoDropTable) {
-                        // 自动重设置table
-                        const count = config.autoDropTable[table] || config.autoDropTable["*"];
-                        if (count) {
-                            const [list] = (yield db.query(`select * from ${table} limit ${count}`));
-                            if (list && list.length < count) {
-                                yield db.query(`drop table ${table}`);
-                                return createTable();
-                            }
                         }
                     }
                     // 若有 befault，就先添加列

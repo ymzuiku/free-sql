@@ -123,10 +123,6 @@ db.alterBase('alter table add index index_age(age)');
 noschema.setConfig({
   /** 判断哪些情况忽略 NoSchema */
   ignoreNoSchema?: (checker: CheckerOptions) => any;
-  /** 启用自动删表，建议仅开发环境打开 */
-  useAutoDropTable?: boolean;
-  /** 前提：useAutoDropTable:true, 当 Table 小于一定的长度，若插入的内容和表结构冲突，自动重新创建表，清空数据 */
-  autoDropTable: { [key: string]: number };
   /** 忽略默认字段 id 的 tableNames */
   ignoreId: string[];
   /** 忽略默认字段 create_at 的 tableNames */

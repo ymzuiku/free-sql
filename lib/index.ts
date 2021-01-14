@@ -112,21 +112,6 @@ const noschema = <T>(connector: T): NoSchemaDb<T> => {
             throw err;
           }
         }
-        if (config.useAutoDropTable) {
-          // 自动重设置table
-          const count =
-            config.autoDropTable![table] || config.autoDropTable!["*"];
-          if (count) {
-            const [list] = (await db.query(
-              `select * from ${table} limit ${count}`
-            )) as any;
-            if (list && list.length < count) {
-              await db.query(`drop table ${table}`);
-              return createTable();
-            }
-          }
-        }
-
         // 若有 befault，就先添加列
         const _beforeAlter = beforeAlterTableCache[table];
         if (_beforeAlter) {
