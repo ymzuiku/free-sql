@@ -436,7 +436,7 @@
         });
         const out = {
             insert,
-            query: (...args) => connector.query(...args),
+            query: (a, b) => connector.query(a, b),
             connector,
             parseInsert,
             onAfterAlterTable,

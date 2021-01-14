@@ -18,10 +18,10 @@ const insertReg = /(insert into)/;
 
 interface NoSchemaDb<T> {
   connector: T;
-  query: (sql: string, sqlValue: any[]) => Promise<any[]>;
-  insert: (sql: string, sqlValue: any[]) => Promise<any[]>;
-  alter: (sql: string, sqlValue: any[]) => void;
-  alterBase: (sql: string, sqlValue: any[]) => void;
+  query: (sql: string, sqlValue?: any[]) => Promise<any[]>;
+  insert: (sql: string, sqlValue?: any[]) => Promise<any[]>;
+  alter: (sql: string, sqlValue?: any[]) => void;
+  alterBase: (sql: string, sqlValue?: any[]) => void;
   parseInsert: typeof parseInsert;
   createTableDetail: typeof createTableDetail;
   onAfterCreateTable: typeof onAfterCreateTable;
@@ -147,7 +147,7 @@ const noschema = <T>(connector: T): NoSchemaDb<T> => {
 
   const out = {
     insert,
-    query: (...args: any[]) => (connector as any).query(...args),
+    query: (a: string, b?: any[]) => (connector as any).query(a, b),
     connector,
     parseInsert,
     onAfterAlterTable,
@@ -156,8 +156,8 @@ const noschema = <T>(connector: T): NoSchemaDb<T> => {
     createTableDetail,
     setConfig,
     createDbAndUser: (opt: any) => createDbAndUser(out, opt),
-    alter: (a: string, b: any[]) => alter(out, a, b),
-    alterBase: (a: string, b: any[]) => alterBase(out, a, b),
+    alter: (a: string, b?: any[]) => alter(out, a, b),
+    alterBase: (a: string, b?: any[]) => alterBase(out, a, b),
   };
 
   return out;

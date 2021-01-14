@@ -1,6 +1,6 @@
 {
   "name": "noschema",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "main": "umd/index.js",
   "types": "umd/index.d.ts",
   "private": false,
