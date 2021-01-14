@@ -75,25 +75,21 @@ export const getColMap = async (db: any, str: string) => {
       isNumber = true;
     }
     v = v.replace(/(\"|\')/g, "");
-    let kind = "VARCHAR(255)";
-    if (isNumber) {
+    let kind = "VARCHAR(128)";
+    if (v === "true" || v === "false") {
+      kind = "TINYINT";
+    } else if (isNumber) {
       if (v.indexOf(".") > -1) {
-        kind = config.focusDoubleType ? "DOUBLE" : "FLOAT";
+        kind = config.focusDoubleType || "FLOAT";
       } else {
         kind = "INT";
       }
     } else if (isDate(v)) {
-      if (v.indexOf(".") > -1) {
-        kind = "TIMESTAMP";
-      } else {
-        kind = "DATETIME";
-      }
-    } else if (v === "true" || v === "false") {
-      kind = "TINYINT";
+      kind = config.focusTimeType || "DATETIME";
     } else {
       const len = Math.max(
         getVarcharLenth(v.length * (config.varcharRate || 4)),
-        config.varcharMinLength || 255
+        config.varcharMinLength || 128
       );
       if (len < 65535) {
         kind = `VARCHAR(${len})`;

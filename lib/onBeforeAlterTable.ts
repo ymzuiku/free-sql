@@ -1,5 +1,5 @@
-export const beforeAlterTableCache = {} as { [key: string]: string[] };
+export const beforeAlterTableCache = {} as { [key: string]: Function };
 
-export const onBeforeAlterTable = (table: string, querys: string[]) => {
-  beforeAlterTableCache[table] = querys;
+export const onBeforeAlterTable = (table: string, event: Function) => {
+  beforeAlterTableCache[table] = event;
 };

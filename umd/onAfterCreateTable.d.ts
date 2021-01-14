@@ -1,4 +1,4 @@
 export declare const afterCreateTableCache: {
-    [key: string]: string[];
+    [key: string]: Function;
 };
-export declare const onAfterCreateTable: (table: string, querys: string[]) => void;
+export declare const onAfterCreateTable: (table: string, event: Function) => void;

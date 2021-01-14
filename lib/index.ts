@@ -1,9 +1,9 @@
 import { config, setConfig } from "./config";
 import { parseInsert, getColMap, lowSQL } from "./parse";
 import { autoAlter, autoTable } from "./sql";
-import { onCreateTable } from "./onCreateTable";
+import { createTableDetail } from "./createTableDetail";
 import { onAfterAlterTable } from "./onAfterAlterTable";
-import { alter, alterInplace } from "./alter";
+import { alter, alterBase } from "./alter";
 import {
   onBeforeAlterTable,
   beforeAlterTableCache,
@@ -21,9 +21,9 @@ interface NoSchemaDb<T> {
   query: (sql: string, sqlValue: any[]) => Promise<any[]>;
   insert: (sql: string, sqlValue: any[]) => Promise<any[]>;
   alter: (sql: string, sqlValue: any[]) => void;
-  alterInplace: (sql: string, sqlValue: any[]) => void;
+  alterBase: (sql: string, sqlValue: any[]) => void;
   parseInsert: typeof parseInsert;
-  onCreateTable: typeof onCreateTable;
+  createTableDetail: typeof createTableDetail;
   onAfterCreateTable: typeof onAfterCreateTable;
   onBeforeAlterTable: typeof onBeforeAlterTable;
   onAfterAlterTable: typeof onAfterAlterTable;
@@ -84,11 +84,9 @@ const noschema = <T>(connector: T): NoSchemaDb<T> => {
         await autoTable(db, table);
         const { colMap: c2 } = await getColMap(db, low);
         await autoAlter(db, table, c2);
-        const afterCreate = afterCreateTableCache[table];
-        if (afterCreate) {
-          for (const _sql of afterCreate) {
-            await db.query(_sql);
-          }
+        const _afterCreate = afterCreateTableCache[table];
+        if (_afterCreate) {
+          await Promise.resolve(_afterCreate());
         }
         return insert(sql, sqlValues);
       };
@@ -114,24 +112,25 @@ const noschema = <T>(connector: T): NoSchemaDb<T> => {
             throw err;
           }
         }
-        // 自动重设置table
-        const count =
-          config.resetTableLimit![table] || config.resetTableLimit!["*"];
-        if (count) {
-          const [list] = (await db.query(
-            `select * from ${table} limit ${count}`
-          )) as any;
-          if (list && list.length < count) {
-            await db.query(`drop table ${table}`);
-            return createTable();
+        if (config.useAutoDropTable) {
+          // 自动重设置table
+          const count =
+            config.autoDropTable![table] || config.autoDropTable!["*"];
+          if (count) {
+            const [list] = (await db.query(
+              `select * from ${table} limit ${count}`
+            )) as any;
+            if (list && list.length < count) {
+              await db.query(`drop table ${table}`);
+              return createTable();
+            }
           }
         }
+
         // 若有 befault，就先添加列
         const _beforeAlter = beforeAlterTableCache[table];
         if (_beforeAlter) {
-          for (const _sql of _beforeAlter) {
-            await db.query(sql);
-          }
+          await Promise.resolve(_beforeAlter());
           // 更新缺少的列
           colMap = (await getColMap(db, low)).colMap;
         }
@@ -154,11 +153,11 @@ const noschema = <T>(connector: T): NoSchemaDb<T> => {
     onAfterAlterTable,
     onAfterCreateTable,
     onBeforeAlterTable,
-    onCreateTable,
+    createTableDetail,
     setConfig,
     createDbAndUser: (opt: any) => createDbAndUser(out, opt),
     alter: (a: string, b: any[]) => alter(out, a, b),
-    alterInplace: (a: string, b: any[]) => alterInplace(out, a, b),
+    alterBase: (a: string, b: any[]) => alterBase(out, a, b),
   };
 
   return out;

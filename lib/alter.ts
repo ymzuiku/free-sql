@@ -3,16 +3,16 @@ import { getMatch, lowSQL } from "./parse";
 const cache = {} as any;
 const alterReg = /alter(.+?)table(.+?)add/;
 
-export const alterInplace = function (
+export const alter = function (connector: any, sql: string, sqlValues: any[]) {
+  sql += ", ALGORITHM=INPLACE, LOCK = NONE;";
+  return alterBase(connector, sql, sqlValues);
+};
+
+export const alterBase = function (
   connector: any,
   sql: string,
   sqlValues: any[]
 ) {
-  sql += ", ALGORITHM=INPLACE, LOCK = NONE;";
-  return alter(connector, sql, sqlValues);
-};
-
-export const alter = function (connector: any, sql: string, sqlValues: any[]) {
   let low = lowSQL(sql);
   if (cache[sql]) {
     return;

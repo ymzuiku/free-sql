@@ -32,12 +32,13 @@
         ignoreId: [],
         ignoreCreateAt: [],
         ignoreUpdateAt: [],
-        resetTableLimit: {},
+        ignoreAutoIndex: [],
+        autoDropTable: {},
     };
     const setConfig = (next) => {
-        if (next.resetTableLimit) {
-            Object.assign(config.resetTableLimit, next.resetTableLimit);
-            delete next.resetTableLimit;
+        if (next.autoDropTable) {
+            Object.assign(config.autoDropTable, next.autoDropTable);
+            delete next.autoDropTable;
         }
         Object.assign(config, next);
     };
@@ -109,28 +110,23 @@
                 isNumber = true;
             }
             v = v.replace(/(\"|\')/g, "");
-            let kind = "VARCHAR(255)";
-            if (isNumber) {
+            let kind = "VARCHAR(128)";
+            if (v === "true" || v === "false") {
+                kind = "TINYINT";
+            }
+            else if (isNumber) {
                 if (v.indexOf(".") > -1) {
-                    kind = config.focusDoubleType ? "DOUBLE" : "FLOAT";
+                    kind = config.focusDoubleType || "FLOAT";
                 }
                 else {
                     kind = "INT";
                 }
             }
             else if (isDate(v)) {
-                if (v.indexOf(".") > -1) {
-                    kind = "TIMESTAMP";
-                }
-                else {
-                    kind = "DATETIME";
-                }
-            }
-            else if (v === "true" || v === "false") {
-                kind = "TINYINT";
+                kind = config.focusTimeType || "DATETIME";
             }
             else {
-                const len = Math.max(getVarcharLenth(v.length * (config.varcharRate || 4)), config.varcharMinLength || 255);
+                const len = Math.max(getVarcharLenth(v.length * (config.varcharRate || 4)), config.varcharMinLength || 128);
                 if (len < 65535) {
                     kind = `VARCHAR(${len})`;
                 }
@@ -157,13 +153,13 @@
     };
 
     const afterAlterTableCache = {};
-    const onAfterAlterTable = (table, querys) => {
-        afterAlterTableCache[table] = querys;
+    const onAfterAlterTable = (table, event) => {
+        afterAlterTableCache[table] = event;
     };
 
-    const onCreateTableCache = {};
-    const onCreateTable = (table, columns) => {
-        onCreateTableCache[table] = columns;
+    const createTableDetailCache = {};
+    const createTableDetail = (table, columns) => {
+        createTableDetailCache[table] = columns;
     };
 
     const createTableColumns = (name) => {
@@ -172,45 +168,59 @@
             config.ignoreId.indexOf(name) === -1 &&
                 `${id} int unsigned NOT NULL AUTO_INCREMENT`,
             config.ignoreCreateAt.indexOf(name) === -1 &&
-                "create_at datetime DEFAULT CURRENT_TIMESTAMP",
+                `create_at ${config.focusTimeType || "datetime"} DEFAULT CURRENT_TIMESTAMP`,
             config.ignoreUpdateAt.indexOf(name) === -1 &&
-                "update_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+                `update_at ${config.focusTimeType || "datetime"} DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
             config.ignoreId.indexOf(name) === -1 && `primary key(${id})`,
         ].filter(Boolean);
     };
     const createTable = (name) => {
-        const _create = onCreateTableCache[name] || [];
+        const _create = createTableDetailCache[name] || [];
         const list = [...createTableColumns(name), ..._create];
         const line = list.join(`, `);
         return `create table if not exists ${name} (${line}) ENGINE=InnoDB DEFAULT CHARSET=utf8;`;
     };
-    // function checkTypeUseIndex(type: string) {
-    //   type = type.toLocaleUpperCase();
-    //   if (type.indexOf("VARCHAR") > -1) {
-    //     const match = type.match(/\((.+?)\)/);
-    //     if (match && match[1]) {
-    //       const len = Number(match[1].trim());
-    //       if (len < (config.varcharMinLength || 255)) {
-    //         return true;
-    //       }
-    //     }
-    //     return false;
-    //   }
-    //   return useIndexTypes[type];
-    // }
+    const useIndexTypes = {
+        TIMESTAMP: 1,
+        DATETIME: 1,
+        INT: 1,
+        TINYINT: 1,
+    };
+    function checkTypeUseIndex(table, type) {
+        if (config.ignoreAutoIndex.indexOf("*") === 0 ||
+            config.ignoreAutoIndex.indexOf(table) > -1) {
+            return false;
+        }
+        type = type.toLocaleUpperCase();
+        if (type.indexOf("VARCHAR") > -1) {
+            const match = type.match(/\((.+?)\)/);
+            if (match && match[1]) {
+                const len = Number(match[1].trim());
+                if (len <= (config.varcharMinLength || 128)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return useIndexTypes[type];
+    }
     const autoAlter = (db, table, colMap) => __awaiter(void 0, void 0, void 0, function* () {
         const columns = Object.keys(colMap);
         for (const column of columns) {
             const type = colMap[column];
             const sql = `alter table ${table} add column ${column} ${type} `;
             yield db.query(sql);
+            const index = checkTypeUseIndex(table, type)
+                ? `index ${column}(${column})`
+                : "";
+            if (index) {
+                yield db.query(`alter table ${table} add index ${column}(${column})`);
+            }
         }
         for (const column of columns) {
             const _alter = afterAlterTableCache[table + "." + column];
             if (_alter) {
-                for (const sql of _alter) {
-                    yield db.query(sql);
-                }
+                yield Promise.resolve(_alter());
             }
         }
     });
@@ -220,11 +230,11 @@
 
     const cache = {};
     const alterReg = /alter(.+?)table(.+?)add/;
-    const alterInplace = function (connector, sql, sqlValues) {
-        sql += ", ALGORITHM=INPLACE, LOCK = NONE;";
-        return alter(connector, sql, sqlValues);
-    };
     const alter = function (connector, sql, sqlValues) {
+        sql += ", ALGORITHM=INPLACE, LOCK = NONE;";
+        return alterBase(connector, sql, sqlValues);
+    };
+    const alterBase = function (connector, sql, sqlValues) {
         let low = lowSQL(sql);
         if (cache[sql]) {
             return;
@@ -263,13 +273,13 @@
     };
 
     const beforeAlterTableCache = {};
-    const onBeforeAlterTable = (table, querys) => {
-        beforeAlterTableCache[table] = querys;
+    const onBeforeAlterTable = (table, event) => {
+        beforeAlterTableCache[table] = event;
     };
 
     const afterCreateTableCache = {};
-    const onAfterCreateTable = (table, querys) => {
-        afterCreateTableCache[table] = querys;
+    const onAfterCreateTable = (table, event) => {
+        afterCreateTableCache[table] = event;
     };
 
     function deleteUser(connector, user, host) {
@@ -373,11 +383,9 @@
                     yield autoTable(db, table);
                     const { colMap: c2 } = yield getColMap(db, low);
                     yield autoAlter(db, table, c2);
-                    const afterCreate = afterCreateTableCache[table];
-                    if (afterCreate) {
-                        for (const _sql of afterCreate) {
-                            yield db.query(_sql);
-                        }
+                    const _afterCreate = afterCreateTableCache[table];
+                    if (_afterCreate) {
+                        yield Promise.resolve(_afterCreate());
                     }
                     return insert(sql, sqlValues);
                 });
@@ -398,21 +406,21 @@
                             throw err;
                         }
                     }
-                    // 自动重设置table
-                    const count = config.resetTableLimit[table] || config.resetTableLimit["*"];
-                    if (count) {
-                        const [list] = (yield db.query(`select * from ${table} limit ${count}`));
-                        if (list && list.length < count) {
-                            yield db.query(`drop table ${table}`);
-                            return createTable();
+                    if (config.useAutoDropTable) {
+                        // 自动重设置table
+                        const count = config.autoDropTable[table] || config.autoDropTable["*"];
+                        if (count) {
+                            const [list] = (yield db.query(`select * from ${table} limit ${count}`));
+                            if (list && list.length < count) {
+                                yield db.query(`drop table ${table}`);
+                                return createTable();
+                            }
                         }
                     }
                     // 若有 befault，就先添加列
                     const _beforeAlter = beforeAlterTableCache[table];
                     if (_beforeAlter) {
-                        for (const _sql of _beforeAlter) {
-                            yield db.query(sql);
-                        }
+                        yield Promise.resolve(_beforeAlter());
                         // 更新缺少的列
                         colMap = (yield getColMap(db, low)).colMap;
                     }
@@ -434,11 +442,11 @@
             onAfterAlterTable,
             onAfterCreateTable,
             onBeforeAlterTable,
-            onCreateTable,
+            createTableDetail,
             setConfig,
             createDbAndUser: (opt) => createDbAndUser(out, opt),
             alter: (a, b) => alter(out, a, b),
-            alterInplace: (a, b) => alterInplace(out, a, b),
+            alterBase: (a, b) => alterBase(out, a, b),
         };
         return out;
     };

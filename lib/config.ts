@@ -19,41 +19,42 @@ interface CheckerOptions {
 export interface NoSchemaOpt {
   /** 判断哪些情况忽略 NoSchema */
   ignoreNoSchema?: (checker: CheckerOptions) => any;
-  /** 当 Table 小于一定的长度，若插入的内容和表结构冲突，自动重新创建表，清空数据 */
-  resetTableLimit?: { [key: string]: number };
+  /** 启用自动删表，建议仅开发环境打开 */
+  useAutoDropTable?: boolean;
+  /** 前提：useAutoDropTable:true, 当 Table 小于一定的长度，若插入的内容和表结构冲突，自动重新创建表，清空数据 */
+  autoDropTable: { [key: string]: number };
+  /** 忽略默认字段 id 的 tableNames */
+  ignoreId: string[];
+  /** 忽略默认字段 create_at 的 tableNames */
+  ignoreCreateAt: string[];
+  /** 忽略默认字段 update_at 的 tableNames */
+  ignoreUpdateAt: string[];
+  /** 浮点数的类型 ，默认为 Float  */
+  focusDoubleType?: string;
+  /** 时间的类型, 默认为 DATETIME */
+  focusTimeType?: string;
   /** 主键名称，默认为 id */
   primaryKey?: string;
-  /** 列名正则匹配(不区分大小写)，自动添加唯一索引，默认为: /(id|key|unique)$/ 即 id key unique 结尾的字段名，自动添加唯一索引 */
-  // uniqueMatch?: RegExp;
-  /** 忽略默认字段 id 的 tableNames */
-  ignoreId?: string[];
-  /** 忽略默认字段 create_at 的 tableNames */
-  ignoreCreateAt?: string[];
-  /** 忽略默认字段 update_at 的 tableNames */
-  ignoreUpdateAt?: string[];
-  /** 带小数点的 number 自动识别为 Double 的 tableNames，默认为 Float  */
-  focusDoubleType?: string[];
-  /** string 类型默认创建 varchar 最小值, 默认为 255 */
+  /** 某些表忽略自动创建索引 */
+  ignoreAutoIndex: string[];
+  /** string 类型默认创建 varchar 最小值, 默认为 128, 同时也是 varchar 自动创建索引的尺寸依据 */
   varcharMinLength?: number;
-  /** 根据首次插入的长度 * varcharRate 来判定 varchar 区间, 默认为 4 倍, 最后会和 varcharMinLength 之间取最大值 */
+  /** 根据首次插入的长度 * varcharRate 来判定 varchar 区间, 默认为 4 倍, 最后会和 varcharMinLength 之间取最大值，并且计算为2的次方*/
   varcharRate?: number;
-  /** 若返回字符串，会替换该次 create table */
-  // replaceCreateTable?: (opt: ReplaceCreateTable) => string | void;
-  /** 若返回字符串，会替换该次 alte column */
-  // replaceAlterColumn?: (opt: ReplaceAlterColumn) => string | void;
 }
 
 export const config = {
   ignoreId: [],
   ignoreCreateAt: [],
   ignoreUpdateAt: [],
-  resetTableLimit: {},
+  ignoreAutoIndex: [],
+  autoDropTable: {},
 } as NoSchemaOpt;
 
-export const setConfig = (next: NoSchemaOpt) => {
-  if (next.resetTableLimit) {
-    Object.assign(config.resetTableLimit, next.resetTableLimit);
-    delete next.resetTableLimit;
+export const setConfig = (next: Partial<NoSchemaOpt>) => {
+  if (next.autoDropTable) {
+    Object.assign(config.autoDropTable, next.autoDropTable);
+    delete next.autoDropTable;
   }
   Object.assign(config, next);
 };
