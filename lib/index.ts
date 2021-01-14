@@ -3,7 +3,7 @@ import { alter } from "./alter";
 import { safeFree, safeQuery } from "./safeQuery";
 import { autoAlter, autoTable } from "./sql";
 import { setConfig } from "./config";
-import { createDbAndUser } from "./createDbAndUser";
+import { createDbAndUser, CreateDbAndUserOpt } from "./createDbAndUser";
 import { onCreateTableDetail } from "./onCreateTableDetail";
 const sqlstring = require("sqlstring");
 
@@ -12,7 +12,7 @@ interface NoSchemaDb {
   alter: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   safeFree: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   safeQuery: (sql: string, sqlValue?: any[]) => Promise<any[]>;
-  createDbAndUser: typeof createDbAndUser;
+  createDbAndUser: (opt: CreateDbAndUserOpt) => Promise<void>;
   onCreateTableDetail: typeof onCreateTableDetail;
   setFreeSQL: typeof setConfig;
 }
