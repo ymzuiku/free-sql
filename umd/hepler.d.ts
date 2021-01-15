@@ -9,8 +9,5 @@ export interface ParseSQL {
     type: string;
     db: string;
     table: string;
-    columns: {
-        [key: string]: IColumn;
-    };
 }
-export declare const parseSQLHelper: (sql: string) => ParseSQL;
+export declare const parseSQL: (sql: string) => ParseSQL;

@@ -69,7 +69,7 @@
 					<p>Use mysql2/promise</p>
 				</blockquote>
 				<ul>
-					<li>给 SQL 添加 NoSQL 的风格，根据 insert 语句 自动创建表和字段</li>
+					<li>给 SQL 添加 NoSQL 的风格，自动创建表和字段</li>
 					<li>内置一系列钩子，可以根据条件自定义类型和忽略某些情况的 NoSQL</li>
 					<li>优雅添加索引</li>
 					<li>自动类型推导</li>
@@ -100,8 +100,8 @@
 <span style="color: #0000FF">async</span><span style="color: #000000"> </span><span style="color: #0000FF">function</span><span style="color: #000000"> </span><span style="color: #795E26">start</span><span style="color: #000000">(){</span>
 <span style="color: #000000">  </span><span style="color: #008000">// 使用默认的 db.query 语句，会提示错误，user 表不存在</span>
 <span style="color: #000000">  </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">db</span><span style="color: #000000">.</span><span style="color: #795E26">query</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;INSERT INTO user (name, age) VALUES (&quot;dog&quot;, 20)&#039;</span><span style="color: #000000">);</span>
-<span style="color: #000000">  </span><span style="color: #008000">// 使用扩展的 db.insert 语句，会自动创建表或字段，并进行 insert</span>
-<span style="color: #000000">  </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">db</span><span style="color: #000000">.</span><span style="color: #795E26">insert</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;INSERT INTO user (name, age) VALUES (&quot;dog&quot;, 20)&#039;</span><span style="color: #000000">);</span>
+<span style="color: #000000">  </span><span style="color: #008000">// 使用扩展的 db.free 语句，会自动创建表或字段，并进行</span>
+<span style="color: #000000">  </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">db</span><span style="color: #000000">.</span><span style="color: #795E26">free</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;INSERT INTO user (name, age) VALUES (&quot;dog&quot;, 20)&#039;</span><span style="color: #000000">);</span>
 <span style="color: #000000">}</span>
 
 <span style="color: #795E26">start</span><span style="color: #000000">();</span>
@@ -142,52 +142,55 @@
 				</ul>
 				<p>取消自动添加索引：</p>
 				<pre><code class="language-ts"><span style="color: #008000">// 取消个别表</span>
-<span style="color: #001080">freeSQL</span><span style="color: #000000">.</span><span style="color: #795E26">setConfig</span><span style="color: #000000">({</span>
+<span style="color: #001080">freeSQL</span><span style="color: #000000">.</span><span style="color: #795E26">setFreeSQLConfig</span><span style="color: #000000">({</span>
 <span style="color: #000000">  </span><span style="color: #001080">ignoreAutoIndex:</span><span style="color: #000000">[</span><span style="color: #A31515">&#039;user&#039;</span><span style="color: #000000">, </span><span style="color: #A31515">&#039;page&#039;</span><span style="color: #000000">]</span>
 <span style="color: #000000">})</span>
 
 <span style="color: #008000">// 取消所有表</span>
-<span style="color: #001080">freeSQL</span><span style="color: #000000">.</span><span style="color: #795E26">setConfig</span><span style="color: #000000">({</span>
+<span style="color: #001080">freeSQL</span><span style="color: #000000">.</span><span style="color: #795E26">setFreeSQLConfig</span><span style="color: #000000">({</span>
 <span style="color: #000000">  </span><span style="color: #001080">ignoreAutoIndex:</span><span style="color: #000000">[</span><span style="color: #A31515">&#039;*&#039;</span><span style="color: #000000">]</span>
 <span style="color: #000000">})</span>
 </code></pre>
-				<a href="#自定义索引" id="自定义索引" style="color: inherit; text-decoration: none;">
-					<h2>自定义索引</h2>
+				<a href="#自定义字段" id="自定义字段" style="color: inherit; text-decoration: none;">
+					<h2>自定义字段</h2>
 				</a>
-				<p>alter 方法可以优雅的自定义索引，我们添加了一些条件，在表体长度不大时，可以编写在代码上下文，而不需要去连接数据库操作。</p>
-				<pre><code class="language-ts"><span style="color: #008000">// 自动创建表和字段，并进行insert</span>
-<span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">db</span><span style="color: #000000">.</span><span style="color: #795E26">insert</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;INSERT INTO user (name, age) VALUES (?, ?)&#039;</span><span style="color: #000000">, [</span><span style="color: #A31515">&quot;dog&quot;</span><span style="color: #000000">, </span><span style="color: #098658">20</span><span style="color: #000000">]);</span>
+				<p>declareColumn 方法可以约定字段类型</p>
+				<pre><code class="language-ts"><span style="color: #008000">// 约定字段类型</span>
+<span style="color: #001080">db</span><span style="color: #000000">.</span><span style="color: #795E26">declareColumn</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;user&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;vip varchar(300)&quot;</span><span style="color: #000000">);</span>
 
-<span style="color: #008000">// 该方法若执行时，会在内存中添加锁，程序的生命周期中仅执行一次</span>
-<span style="color: #008000">// 若该方法执行结果失败，会清除内存中的锁</span>
-<span style="color: #008000">// 执行前会查询添加索引的表，判定若无同名索引，则开始添加索引</span>
-<span style="color: #008000">// 仅允许执行 alter table add index/unique</span>
-<span style="color: #008000">// 不锁表加索引，相当于：ALGORITHM=INPLACE, LOCK = NONE</span>
-<span style="color: #001080">db</span><span style="color: #000000">.</span><span style="color: #795E26">alter</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;alter table add index index_age(age)&#039;</span><span style="color: #000000">);</span>
+<span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">db</span><span style="color: #000000">.</span><span style="color: #795E26">free</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;INSERT INTO user (name, age, vip) VALUES (?, ?, ?)&#039;</span><span style="color: #000000">, [</span><span style="color: #A31515">&quot;dog&quot;</span><span style="color: #000000">, </span><span style="color: #098658">20</span><span style="color: #000000">, </span><span style="color: #098658">50</span><span style="color: #000000">]);</span>
+</code></pre>
+				<a href="#自定义索引" id="自定义索引" style="color: inherit; text-decoration: none;">
+					<h3>自定义索引</h3>
+				</a>
+				<p>declareColumn 约定索引，在表字段有变更时，会进行创建索引</p>
+				<p>默认使用非锁表的方式创建( UNIQUE 索引除外)：ALGORITHM=INPLACE, LOCK = NONE</p>
+				<pre><code class="language-ts"><span style="color: #008000">// 约定索引</span>
+<span style="color: #001080">db</span><span style="color: #000000">.</span><span style="color: #795E26">declareColumn</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;user&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;key age(age)&quot;</span><span style="color: #000000">);</span>
 
-<span style="color: #008000">// 忽略：ALGORITHM=INPLACE, LOCK = NONE</span>
-<span style="color: #001080">db</span><span style="color: #000000">.</span><span style="color: #795E26">alterBase</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;alter table add index index_age(age)&#039;</span><span style="color: #000000">);</span>
+<span style="color: #008000">// 约定多个索引</span>
+<span style="color: #001080">db</span><span style="color: #000000">.</span><span style="color: #795E26">declareColumn</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;user&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;key unique(age, vip)&quot;</span><span style="color: #000000">);</span>
+
+<span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">db</span><span style="color: #000000">.</span><span style="color: #795E26">free</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;INSERT INTO user (name, age, vip) VALUES (?, ?, ?)&#039;</span><span style="color: #000000">, [</span><span style="color: #A31515">&quot;dog&quot;</span><span style="color: #000000">, </span><span style="color: #098658">20</span><span style="color: #000000">, </span><span style="color: #098658">50</span><span style="color: #000000">]);</span>
 </code></pre>
 				<a href="#配置" id="配置" style="color: inherit; text-decoration: none;">
 					<h2>配置</h2>
 				</a>
-				<pre><code class="language-ts"><span style="color: #001080">freeSQL</span><span style="color: #000000">.</span><span style="color: #795E26">setConfig</span><span style="color: #000000">({</span>
-<span style="color: #000000">  </span><span style="color: #008000">/** 判断哪些情况忽略 free-sql */</span>
-<span style="color: #000000">  ignoreNoSchme?</span><span style="color: #001080">:</span><span style="color: #000000"> (</span><span style="color: #001080">checker</span><span style="color: #000000">: </span><span style="color: #267F99">CheckerOptions</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> </span><span style="color: #001080">any</span><span style="color: #000000">;</span>
+				<pre><code class="language-ts"><span style="color: #001080">freeSQL</span><span style="color: #000000">.</span><span style="color: #795E26">setFreeSQLConfig</span><span style="color: #000000">({</span>
 <span style="color: #000000">  </span><span style="color: #008000">/** 忽略默认字段 id 的 tableNames */</span>
-<span style="color: #000000">  </span><span style="color: #001080">ignoreId</span><span style="color: #000000">: </span><span style="color: #001080">string</span><span style="color: #000000">[];</span>
+<span style="color: #000000">  </span><span style="color: #001080">ignoreId:</span><span style="color: #000000"> </span><span style="color: #001080">string</span><span style="color: #000000">[];</span>
 <span style="color: #000000">  </span><span style="color: #008000">/** 忽略默认字段 create_at 的 tableNames */</span>
 <span style="color: #000000">  </span><span style="color: #001080">ignoreCreateAt</span><span style="color: #000000">: </span><span style="color: #001080">string</span><span style="color: #000000">[];</span>
 <span style="color: #000000">  </span><span style="color: #008000">/** 忽略默认字段 update_at 的 tableNames */</span>
 <span style="color: #000000">  </span><span style="color: #001080">ignoreUpdateAt</span><span style="color: #000000">: </span><span style="color: #001080">string</span><span style="color: #000000">[];</span>
+<span style="color: #000000">  </span><span style="color: #008000">/** 某些表忽略自动创建索引 */</span>
+<span style="color: #000000">  </span><span style="color: #001080">ignoreAutoIndex</span><span style="color: #000000">: </span><span style="color: #001080">string</span><span style="color: #000000">[];</span>
 <span style="color: #000000">  </span><span style="color: #008000">/** 浮点数的类型 ，默认为 Float  */</span>
 <span style="color: #000000">  </span><span style="color: #001080">focusDoubleType</span><span style="color: #000000">?: </span><span style="color: #001080">string</span><span style="color: #000000">;</span>
 <span style="color: #000000">  </span><span style="color: #008000">/** 时间的类型, 默认为 DATETIME */</span>
 <span style="color: #000000">  </span><span style="color: #001080">focusTimeType</span><span style="color: #000000">?: </span><span style="color: #001080">string</span><span style="color: #000000">;</span>
 <span style="color: #000000">  </span><span style="color: #008000">/** 主键名称，默认为 id */</span>
 <span style="color: #000000">  </span><span style="color: #001080">primaryKey</span><span style="color: #000000">?: </span><span style="color: #001080">string</span><span style="color: #000000">;</span>
-<span style="color: #000000">  </span><span style="color: #008000">/** 某些表忽略自动创建索引 */</span>
-<span style="color: #000000">  </span><span style="color: #001080">ignoreAutoIndex</span><span style="color: #000000">: </span><span style="color: #001080">string</span><span style="color: #000000">[];</span>
 <span style="color: #000000">  </span><span style="color: #008000">/** string 类型默认创建 varchar 最小值, 默认为 128, 同时也是 varchar 自动创建索引的尺寸依据 */</span>
 <span style="color: #000000">  </span><span style="color: #001080">varcharMinLength</span><span style="color: #000000">?: </span><span style="color: #001080">number</span><span style="color: #000000">;</span>
 <span style="color: #000000">  </span><span style="color: #008000">/** 根据首次插入的长度 * varcharRate 来判定 varchar 区间, 默认为 4 倍, 最后会和 varcharMinLength 之间取最大值，并且计算为2的次方*/</span>
@@ -210,40 +213,22 @@
 						<a href="modules.html">Exports</a>
 					</li>
 					<li class=" tsd-kind-module">
-						<a href="modules/alter.html">alter</a>
+						<a href="modules/columns.html">columns</a>
 					</li>
 					<li class=" tsd-kind-module">
-						<a href="modules/config.html">config</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/createdbanduser.html">create<wbr>DbAnd<wbr>User</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/createtabledetail.html">create<wbr>Table<wbr>Detail</a>
+						<a href="modules/hepler.html">hepler</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="modules/index.html">index</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/onafteraltertable.html">on<wbr>After<wbr>Alter<wbr>Table</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/onaftercreatetable.html">on<wbr>After<wbr>Create<wbr>Table</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/onbeforealtertable.html">on<wbr>Before<wbr>Alter<wbr>Table</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/parse.html">parse</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/queryonce.html">query<wbr>Once</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="modules/safequery.html">safe<wbr>Query</a>
 					</li>
 					<li class=" tsd-kind-module">
 						<a href="modules/sql.html">sql</a>
+					</li>
+					<li class=" tsd-kind-module">
+						<a href="modules/table.html">table</a>
 					</li>
 				</ul>
 			</nav>
