@@ -4,6 +4,7 @@ interface FreeSQL {
     free: (sql: string, sqlValue?: any[]) => Promise<any[]>;
     safeFree: (sql: string, sqlValue?: any[]) => Promise<any[]>;
     safeQuery: (sql: string, sqlValue?: any[]) => Promise<any[]>;
+    safeOnceQuery: (sql: string, sqlValue?: any[]) => Promise<any[]>;
     table: typeof table;
     columns: typeof columns;
 }

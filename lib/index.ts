@@ -3,12 +3,14 @@ import { safeFree, safeQuery } from "./safeQuery";
 import { autoAlter, autoTable } from "./sql";
 import { table } from "./table";
 import { columns } from "./columns";
+import { safeOnceQuery } from "./safeOnceQuery";
 const sqlstring = require("sqlstring");
 
 interface FreeSQL {
   free: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   safeFree: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   safeQuery: (sql: string, sqlValue?: any[]) => Promise<any[]>;
+  safeOnceQuery: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   table: typeof table;
   columns: typeof columns;
 }
@@ -39,6 +41,7 @@ const freeSQL = <T>(connector: T): FreeSQL & T => {
 
   db.safeFree = (a: string, b: any[]) => safeFree(db, a, b);
   db.safeQuery = (a: string, b: any[]) => safeQuery(db, a, b);
+  db.safeOnceQuery = (a: string, b: any[]) => safeOnceQuery(db, a, b);
   db.table = table;
   db.columns = columns;
   return db;

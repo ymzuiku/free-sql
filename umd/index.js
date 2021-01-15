@@ -1,8 +1,10 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-    typeof define === 'function' && define.amd ? define(factory) :
-    (global = global || self, global.freeSQL = factory());
-}(this, function () { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('crypto')) :
+    typeof define === 'function' && define.amd ? define(['crypto'], factory) :
+    (global = global || self, global.freeSQL = factory(global.crypto));
+}(this, function (crypto) { 'use strict';
+
+    crypto = crypto && crypto.hasOwnProperty('default') ? crypto['default'] : crypto;
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
@@ -29,7 +31,6 @@
     }
 
     const { Parser } = require("node-sql-parser/build/mysql");
-    // export const parseAlterHelper = (sql: string) => {};
     const parseSQL = (sql) => {
         const parse = new Parser();
         let ast;
@@ -87,40 +88,24 @@
     const declareTableCache = {};
     // declare
     const table = (table, query) => {
-        const list = [];
+        const list = new Set();
         query.forEach((item) => {
             if (typeof item === "string") {
                 if (item) {
-                    list.push(item);
+                    list.add(item);
                 }
             }
             else {
                 item.forEach((v) => {
                     if (v) {
-                        list.push(v);
+                        list.add(v);
                     }
                 });
             }
         });
-        declareTableCache[table] = list;
+        declareTableCache[table] = Array.from(list);
     };
 
-    // import { useColumnCache } from "./useColumn";
-    // export const createTableColumns = (name: string) => {
-    //   return [
-    //     config.ignoreId!.indexOf(name) === -1 &&
-    //       `${id} int unsigned NOT NULL AUTO_INCREMENT`,
-    //     config.ignoreCreateAt!.indexOf(name) === -1 &&
-    //       `create_at ${
-    //         config.focusTimeType || "datetime"
-    //       } DEFAULT CURRENT_TIMESTAMP`,
-    //     config.ignoreUpdateAt!.indexOf(name) === -1 &&
-    //       `update_at ${
-    //         config.focusTimeType || "datetime"
-    //       } DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
-    //     config.ignoreId!.indexOf(name) === -1 && `primary key(${id})`,
-    //   ].filter(Boolean) as string[];
-    // };
     const autoAlter = (db, ast) => __awaiter(void 0, void 0, void 0, function* () {
         const table = ast.table;
         const _indexs = declareTableCache[table] || [];
@@ -143,16 +128,42 @@
     });
 
     const columns = {
-        id: ["id int unsigned NOT NULL AUTO_INCREMENT", "primary key id"],
-        id_TINYINT: ["id TINYINT unsigned NOT NULL AUTO_INCREMENT", "primary key id"],
-        id_BIGINT: ["id BIGINT unsigned NOT NULL AUTO_INCREMENT", "primary key id"],
-        create_at: "create_at datetime DEFAULT CURRENT_TIMESTAMP",
+        id: "id int unsigned NOT NULL AUTO_INCREMENT primary key",
+        id_TINYINT: "id TINYINT unsigned NOT NULL AUTO_INCREMENT primary key",
+        id_BIGINT: "id TINYINT unsigned NOT NULL AUTO_INCREMENT primary key",
+        create_at: "create_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
         create_at_TIMESTAMP: "create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
-        update_at: "update_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
-        update_at_TIMESTAMP: "update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+        update_at: "update_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+        update_at_TIMESTAMP: "update_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
     };
 
+    const sha256 = (str, slat = "base-slat") => {
+        const obj = crypto.createHash("sha256");
+        obj.update(str + (slat ? slat : ""));
+        return obj.digest("hex");
+    };
     const sqlstring = require("sqlstring");
+    const cache = {};
+    const safeOnceQuery = (db, sql, sqlValues) => __awaiter(void 0, void 0, void 0, function* () {
+        if (!cache.runed) {
+            db.table("free_sql_lock", ["id varchar(512) unique", db.columns.create_at]);
+            cache.runed = true;
+        }
+        let low = sqlstring.format(sql, sqlValues);
+        if (cache[low]) {
+            return;
+        }
+        const id = sha256(low);
+        const [list,] = yield db.free("select id from free_sql_lock where id=? limit 1", [id]);
+        if (list.length) {
+            return;
+        }
+        yield db.safeQuery(sql, sqlValues);
+        yield db.safeQuery("insert into free_sql_lock (id) values (?)", id);
+        cache[low] = true;
+    });
+
+    const sqlstring$1 = require("sqlstring");
     const unknownColumn = /Unknown column/;
     const notExitsTable = /Table (.+?)doesn\'t exist/;
     const freeSQL = (connector) => {
@@ -167,7 +178,7 @@
                 err = error;
             }
             const errString = err.toString();
-            let low = sqlstring.format(sql, sqlValues);
+            let low = sqlstring$1.format(sql, sqlValues);
             if (notExitsTable.test(errString)) {
                 yield autoTable(db, parseSQL(low));
             }
@@ -178,6 +189,7 @@
         });
         db.safeFree = (a, b) => safeFree(db, a, b);
         db.safeQuery = (a, b) => safeQuery(db, a, b);
+        db.safeOnceQuery = (a, b) => safeOnceQuery(db, a, b);
         db.table = table;
         db.columns = columns;
         return db;
