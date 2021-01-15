@@ -1,6 +1,6 @@
 import { config } from "./config";
 import { ParseSQL } from "./hepler";
-import { agreeColumnCache } from "./agreeColumn";
+import { declareColumnCache } from "./agreeColumn";
 // import { useColumnCache } from "./useColumn";
 
 export const createTableColumns = (name: string) => {
@@ -54,7 +54,7 @@ export const autoAlter = async (db: any, ast: ParseSQL) => {
   const table = ast.table;
   const columnKeys = Object.keys(ast.columns);
 
-  const _indexs = agreeColumnCache[table] || [];
+  const _indexs = declareColumnCache[table] || [];
   for (const s of _indexs) {
     const low = s.toLocaleLowerCase();
     if (/alter table/.test(low)) {

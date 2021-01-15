@@ -1,8 +1,9 @@
-export const agreeColumnCache = {} as { [key: string]: string[] };
+export const declareColumnCache = {} as { [key: string]: string[] };
 
-export const agreeColumn = (table: string, query: string | string[]) => {
+// declare
+export const declareColumn = (table: string, query: string | string[]) => {
   if (typeof query === "string") {
     query = [query];
   }
-  agreeColumnCache[table] = query.filter(Boolean);
+  declareColumnCache[table] = query.filter(Boolean);
 };

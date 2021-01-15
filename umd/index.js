@@ -215,12 +215,13 @@
         }
     });
 
-    const agreeColumnCache = {};
-    const agreeColumn = (table, query) => {
+    const declareColumnCache = {};
+    // declare
+    const declareColumn = (table, query) => {
         if (typeof query === "string") {
             query = [query];
         }
-        agreeColumnCache[table] = query.filter(Boolean);
+        declareColumnCache[table] = query.filter(Boolean);
     };
 
     // import { useColumnCache } from "./useColumn";
@@ -265,7 +266,7 @@
         // const columnSets = new Set(columnKeys);
         const table = ast.table;
         const columnKeys = Object.keys(ast.columns);
-        const _indexs = agreeColumnCache[table] || [];
+        const _indexs = declareColumnCache[table] || [];
         for (const s of _indexs) {
             const low = s.toLocaleLowerCase();
             if (/alter table/.test(low)) {
@@ -380,7 +381,7 @@
         });
         db.safeFree = (a, b) => safeFree(db, a, b);
         db.safeQuery = (a, b) => safeQuery(db, a, b);
-        db.agreeColumn = agreeColumn;
+        db.declareColumn = declareColumn;
         db.createDbAndUser = (a) => createDbAndUser(db, a);
         db.setFreeSQLConfig = setConfig;
         return db;

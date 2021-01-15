@@ -1,4 +1,4 @@
-export declare const agreeColumnCache: {
+export declare const declareColumnCache: {
     [key: string]: string[];
 };
-export declare const agreeColumn: (table: string, query: string | string[]) => void;
+export declare const declareColumn: (table: string, query: string | string[]) => void;
