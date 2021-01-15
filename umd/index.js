@@ -215,19 +215,15 @@
         }
     });
 
-    const useIndexCache = {};
-    const useIndex = (table, query) => {
+    const agreeColumnCache = {};
+    const agreeColumn = (table, query) => {
         if (typeof query === "string") {
             query = [query];
         }
-        useIndexCache[table] = query.filter(Boolean);
+        agreeColumnCache[table] = query.filter(Boolean);
     };
 
-    const useTypeCache = {};
-    const useColumn = (tableAndColumn, type) => {
-        useTypeCache[tableAndColumn] = type;
-    };
-
+    // import { useColumnCache } from "./useColumn";
     const createTableColumns = (name) => {
         const id = config.primaryKey || "id";
         return [
@@ -266,30 +262,32 @@
         return isIndex;
     }
     const autoAlter = (db, ast) => __awaiter(void 0, void 0, void 0, function* () {
-        const columns = Object.keys(ast.columns);
+        // const columnSets = new Set(columnKeys);
         const table = ast.table;
-        for (const column of columns) {
-            const alterKey = ast.table + "." + column;
-            const _sql = useTypeCache[alterKey];
-            if (_sql) {
-                yield db.query(`alter table ${table} add column ${column} ` + _sql);
-            }
-            else {
-                const type = ast.columns[column].type;
-                const sql = `alter table ${table} add column ${column} ${type} `;
-                yield db.query(sql);
-            }
-        }
-        const _indexs = useIndexCache[table] || [];
+        const columnKeys = Object.keys(ast.columns);
+        const _indexs = agreeColumnCache[table] || [];
         for (const s of _indexs) {
-            if (s.indexOf("unique(") > -1) {
-                yield db.query(`alter table ${table} add ${s}`);
+            const low = s.toLocaleLowerCase();
+            if (/alter table/.test(low)) {
+                yield db.safeQuery(s);
             }
             else {
-                yield db.query(`alter table ${table} add ${s} , ALGORITHM=INPLACE, LOCK = NONE`);
+                yield db.safeQuery(`alter table ${table} add ${s}`);
             }
+            // if (s.indexOf("unique(") > -1) {
+            //   await db.query(`alter table ${table} add ${s}`);
+            // } else {
+            //   await db.query(
+            //     `alter table ${table} add ${s} , ALGORITHM=INPLACE, LOCK = NONE`
+            //   );
+            // }
         }
-        for (const column of columns) {
+        for (const column of columnKeys) {
+            const type = ast.columns[column].type;
+            const sql = `alter table ${table} add column ${column} ${type} `;
+            yield db.safeQuery(sql);
+        }
+        for (const column of columnKeys) {
             const type = ast.columns[column].type;
             if (checkTypeUseIndex(table, type)) {
                 yield db.safeQuery(`alter table ${table} add index ${column}(${column})`);
@@ -382,8 +380,7 @@
         });
         db.safeFree = (a, b) => safeFree(db, a, b);
         db.safeQuery = (a, b) => safeQuery(db, a, b);
-        db.useIndex = useIndex;
-        db.useColumn = useColumn;
+        db.agreeColumn = agreeColumn;
         db.createDbAndUser = (a) => createDbAndUser(db, a);
         db.setFreeSQLConfig = setConfig;
         return db;

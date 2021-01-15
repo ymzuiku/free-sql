@@ -3,8 +3,7 @@ import { safeFree, safeQuery } from "./safeQuery";
 import { autoAlter, autoTable } from "./sql";
 import { setConfig } from "./config";
 import { createDbAndUser, CreateDbAndUserOpt } from "./createDbAndUser";
-import { useIndex } from "./useIndex";
-import { useColumn } from "./useColumn";
+import { agreeColumn } from "./agreeColumn";
 const sqlstring = require("sqlstring");
 
 interface NoSchemaDb {
@@ -12,8 +11,7 @@ interface NoSchemaDb {
   safeFree: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   safeQuery: (sql: string, sqlValue?: any[]) => Promise<any[]>;
   createDbAndUser: (opt: CreateDbAndUserOpt) => Promise<void>;
-  useIndex: typeof useIndex;
-  useColumn: typeof useColumn;
+  agreeColumn: typeof agreeColumn;
   setFreeSQLConfig: typeof setConfig;
 }
 
@@ -44,8 +42,7 @@ const freeSQL = <T>(connector: T): NoSchemaDb & T => {
 
   db.safeFree = (a: string, b: any[]) => safeFree(db, a, b);
   db.safeQuery = (a: string, b: any[]) => safeQuery(db, a, b);
-  db.useIndex = useIndex;
-  db.useColumn = useColumn;
+  db.agreeColumn = agreeColumn;
   db.createDbAndUser = (a: any) => createDbAndUser(db, a);
   db.setFreeSQLConfig = setConfig;
   return db;

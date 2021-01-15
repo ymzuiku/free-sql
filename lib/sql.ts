@@ -1,7 +1,7 @@
 import { config } from "./config";
 import { ParseSQL } from "./hepler";
-import { useIndexCache } from "./useIndex";
-import { useTypeCache } from "./useColumn";
+import { agreeColumnCache } from "./agreeColumn";
+// import { useColumnCache } from "./useColumn";
 
 export const createTableColumns = (name: string) => {
   const id = config.primaryKey || "id";
@@ -50,33 +50,34 @@ function checkTypeUseIndex(table: string, type: string) {
 }
 
 export const autoAlter = async (db: any, ast: ParseSQL) => {
-  const columns = Object.keys(ast.columns);
+  // const columnSets = new Set(columnKeys);
   const table = ast.table;
+  const columnKeys = Object.keys(ast.columns);
 
-  for (const column of columns) {
-    const alterKey = ast.table + "." + column;
-    const _sql = useTypeCache[alterKey];
-    if (_sql) {
-      await db.query(`alter table ${table} add column ${column} ` + _sql);
-    } else {
-      const type = ast.columns[column].type;
-      const sql = `alter table ${table} add column ${column} ${type} `;
-      await db.query(sql);
-    }
-  }
-
-  const _indexs = useIndexCache[table] || [];
+  const _indexs = agreeColumnCache[table] || [];
   for (const s of _indexs) {
-    if (s.indexOf("unique(") > -1) {
-      await db.query(`alter table ${table} add ${s}`);
+    const low = s.toLocaleLowerCase();
+    if (/alter table/.test(low)) {
+      await db.safeQuery(s);
     } else {
-      await db.query(
-        `alter table ${table} add ${s} , ALGORITHM=INPLACE, LOCK = NONE`
-      );
+      await db.safeQuery(`alter table ${table} add ${s}`);
     }
+    // if (s.indexOf("unique(") > -1) {
+    //   await db.query(`alter table ${table} add ${s}`);
+    // } else {
+    //   await db.query(
+    //     `alter table ${table} add ${s} , ALGORITHM=INPLACE, LOCK = NONE`
+    //   );
+    // }
   }
 
-  for (const column of columns) {
+  for (const column of columnKeys) {
+    const type = ast.columns[column].type;
+    const sql = `alter table ${table} add column ${column} ${type} `;
+    await db.safeQuery(sql);
+  }
+
+  for (const column of columnKeys) {
     const type = ast.columns[column].type;
     if (checkTypeUseIndex(table, type)) {
       await db.safeQuery(`alter table ${table} add index ${column}(${column})`);
