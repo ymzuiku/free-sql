@@ -47,6 +47,10 @@ export const parseSQLHelper = (sql: string): ParseSQL => {
   let db: any;
   let table: any;
 
+  if (type !== "update" && type !== "insert" && type !== "select") {
+    throw "[free-sql] only declare: update insert select";
+  }
+
   try {
     if (type === "update" || type === "insert") {
       details = ast.table;
