@@ -100,11 +100,11 @@ freeSQL.setFreeSQLConfig({
 
 ## 自定义字段
 
-useType 方法可以约定字段类型
+useColumn 方法可以约定字段类型
 
 ```ts
 // 约定字段类型
-db.useType("user.vip", "varchar(300)");
+db.useColumn("user.vip", "varchar(300)");
 
 await db.free('INSERT INTO user (name, age, vip) VALUES (?, ?, ?)', ["dog", 20, 50]);
 ```
@@ -117,10 +117,10 @@ useIndex 约定索引，在表字段有变更时，会进行创建索引
 
 ```ts
 // 约定索引
-db.useType("user", "key age(age)");
+db.useIndex("user", "key age(age)");
 
 // 约定多个索引
-db.useType("user", ["key age(age)", "unique(name, vip)"]);
+db.useIndex("user", ["key age(age)", "unique(name, vip)"]);
 
 await db.free('INSERT INTO user (name, age, vip) VALUES (?, ?, ?)', ["dog", 20, 50]);
 ```

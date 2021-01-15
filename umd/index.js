@@ -224,7 +224,7 @@
     };
 
     const useTypeCache = {};
-    const useType = (tableAndColumn, type) => {
+    const useColumn = (tableAndColumn, type) => {
         useTypeCache[tableAndColumn] = type;
     };
 
@@ -383,7 +383,7 @@
         db.safeFree = (a, b) => safeFree(db, a, b);
         db.safeQuery = (a, b) => safeQuery(db, a, b);
         db.useIndex = useIndex;
-        db.useType = useType;
+        db.useColumn = useColumn;
         db.createDbAndUser = (a) => createDbAndUser(db, a);
         db.setFreeSQLConfig = setConfig;
         return db;

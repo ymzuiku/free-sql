@@ -1,7 +1,7 @@
 import { config } from "./config";
 import { ParseSQL } from "./hepler";
 import { useIndexCache } from "./useIndex";
-import { useTypeCache } from "./useType";
+import { useTypeCache } from "./useColumn";
 
 export const createTableColumns = (name: string) => {
   const id = config.primaryKey || "id";
