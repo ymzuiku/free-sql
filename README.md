@@ -100,27 +100,27 @@ freeSQL.setFreeSQLConfig({
 
 ## 自定义字段
 
-declareColumn 方法可以约定字段类型
+table 方法可以约定字段类型
 
 ```ts
 // 约定字段类型
-db.declareColumn("user", "vip varchar(300)");
+db.table("user", "vip varchar(300)");
 
 await db.free('INSERT INTO user (name, age, vip) VALUES (?, ?, ?)', ["dog", 20, 50]);
 ```
 
 ### 自定义索引
 
-declareColumn 约定索引，在表字段有变更时，会进行创建索引
+table 约定索引，在表字段有变更时，会进行创建索引
 
 默认使用非锁表的方式创建( UNIQUE 索引除外)：ALGORITHM=INPLACE, LOCK = NONE
 
 ```ts
 // 约定索引
-db.declareColumn("user", "key age(age)");
+db.table("user", "key age(age)");
 
 // 约定多个索引
-db.declareColumn("user", "key unique(age, vip)");
+db.table("user", "key unique(age, vip)");
 
 await db.free('INSERT INTO user (name, age, vip) VALUES (?, ?, ?)', ["dog", 20, 50]);
 ```
